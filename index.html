@@ -90,7 +90,7 @@ summary{cursor:pointer;font-weight:700}
 .dvw{position:fixed;inset:0;z-index:30;container-type:size;background:#26262a}
 .dv{width:100%;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 26%;grid-template-rows:minmax(0,1fr) auto;gap:1.5cqh;padding:1.5cqh;color:#111}
 @media (orientation:landscape){.dv{padding:max(1.5cqh,env(safe-area-inset-top)) max(1.5cqh,env(safe-area-inset-right)) max(1.5cqh,env(safe-area-inset-bottom)) max(1.5cqh,env(safe-area-inset-left))}}
-@media (orientation:portrait){.dvw{inset:auto;top:0;left:100dvw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg)}.dv{padding-left:max(1.5cqh,env(safe-area-inset-top,0px),var(--sat,0px));padding-right:max(1.5cqh,env(safe-area-inset-bottom,0px),var(--sab,0px))}}
+@media (orientation:portrait){.dvw,.simw{inset:auto;top:0;left:100dvw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg)}.dv{padding-left:max(1.5cqh,env(safe-area-inset-top,0px),var(--sat,0px));padding-right:max(1.5cqh,env(safe-area-inset-bottom,0px),var(--sab,0px))}}
 .dmain{background:#d4d4d6;border-radius:1cqh;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .dtab{background:#5560a0;color:#fff;font-size:5cqh;padding:.6cqh 2.5cqh;border-radius:1cqh 3cqh 0 0;align-self:flex-start;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dtrip{font-size:5.4cqh;padding:1cqh 2.5cqh 0;color:#333;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -109,7 +109,7 @@ summary{cursor:pointer;font-weight:700}
 .dclk{font-size:12cqh;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
 .dbox{flex:1;border-top:.4cqh solid #fff;text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:0 .5cqh}
 .dbox small{font-size:4.2cqh;font-weight:700}.dbox b{font-size:8cqh;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dkeys{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:1.5cqh}
+.dkeys{grid-column:1/-1;display:grid;grid-template-columns:repeat(8,1fr);gap:1.5cqh}
 .dkeys button{background:#3d3d42;color:#fff;border:0;border-bottom:.6cqh solid #111;border-radius:1cqh;min-height:11cqh;font-size:4.6cqh;font-weight:700;padding:0}
 .dkeys button.on{background:#ffd23f;color:#111}
 .dly{font-size:.62em;font-weight:800;margin-left:.6em;color:#d32f2f}.dly.early{color:#1565c0}.dr.cur .dly{color:#ff8a80}.dr.cur .dly.early{color:#8ab4ff}.dly.run{opacity:.85}.dly.ok{color:#2e7d32}.dr.cur .dly.ok{color:#8bd48e}
@@ -128,6 +128,15 @@ summary{cursor:pointer;font-weight:700}
 .mpx::after{top:50%;left:-9px;right:-9px;height:2px;margin-top:-1px}
 .mpb{display:flex;gap:6px;align-items:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
 #mc{flex:1;font-size:13px;font-variant-numeric:tabular-nums;min-width:0}
+.simw{position:fixed;inset:0;z-index:60;container-type:size;pointer-events:none}
+.simp{pointer-events:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:82%;background:#1b1b1f;color:#fff;border-radius:2cqh;padding:2.5cqh 3cqh;font-size:4.2cqh;border:.6cqh solid #ffd23f;line-height:1.35}
+.simp .h{font-weight:800;font-size:5cqh;margin-bottom:1.2cqh}
+.simp .r{display:flex;gap:1.2cqh;align-items:center;margin:1.2cqh 0;flex-wrap:wrap}
+.simp .r>span{min-width:11cqh;font-weight:700}
+.simp button{background:#3d3d42;color:#fff;border:0;border-radius:1cqh;min-height:9cqh;padding:0 2.4cqh;font-size:4cqh;font-weight:700;flex:1}
+.simp button.on{background:#ffd23f;color:#111}
+.simp button.go{background:#1b7f3b}.simp button.stop{background:#b3261e}
+.simp .t{font-size:3.6cqh;color:#cfd5da;font-variant-numeric:tabular-nums}
 @media print{.vhead,.toast{display:none}body{background:#fff}.wrap{padding:0}}
 </style>
 </head>
@@ -211,20 +220,20 @@ const dix={};let dlast=[0,1],lastMin=-1;
 function segsOf(s){const g=[];s.rows.forEach((r,i)=>{if(r.k==='trip'||!g.length)g.push([]);g[g.length-1].push(i)});return g}
 function tmin(v){const m=/(\d{1,2}):(\d{2})/.exec(v||'');return m?+m[1]*60+ +m[2]:null}
 function dlabel(r){const p=PASS.test(r.arr||''),d=/\d/.test(r.dep||'')?r.dep:'',a=/\d/.test(r.arr||'')?r.arr:'';return p?(d?d+'通過':'通過'):d?d+'発':a?a+'発':''}
-function renderDash(){clearTimeout(dto);if(gpsOn){const v=dix[cur];if(v!=null){if(g.at!==v)g.at=-1;if(g.max!==v){g.min=1e9;g.t=0;g.tl=0}g.max=v}}renderDash0();dscroll(false)}
+function renderDash(){clearTimeout(dto);if(gpsOn){const v=dix[cur];if(v!=null){if(g.at!==v)g.at=-1;if(g.max!==v){g.min=1e9;g.t=0;g.tl=0}g.max=v}}renderDash0();fitRows();dscroll(false)}
 function renderDash0(){
   const s=getStaff();if(!s){mode='list';render();return}
   const g=segsOf(s);data.pg=data.pg||{};
   const pg=Math.max(0,Math.min(data.pg[s.id]||0,g.length-1)),ix=g[pg]||[];
   const trip=ix.length&&s.rows[ix[0]].k==='trip'?s.rows[ix[0]]:null;
   const st=ix.map(i=>s.rows[i]).filter(r=>r.k==='sta');
-  const now=new Date(),nm=now.getHours()*60+now.getMinutes(),p2=n=>String(n).padStart(2,'0');
+  const now=new Date(VN()),nm=now.getHours()*60+now.getMinutes(),p2=n=>String(n).padStart(2,'0');
   lastMin=now.getMinutes();
   let ci=dix[s.id];
   if(ci==null){const ts=st.map(r=>tmin(/\d/.test(r.dep||'')?r.dep:r.arr));let f=ts.findIndex(t=>t!=null&&t>=nm);ci=ts.some(t=>t!=null)?(f>=0?f:st.length-1):0}
   ci=Math.max(0,Math.min(ci,st.length-1));dlast=[ci,st.length];
   const lgx=dlog[pgKey(s)]||{};
-  const nw=new Date(toff==null?Date.now():Date.now()-toff*60000),nmin=nw.getHours()*60+nw.getMinutes()+nw.getSeconds()/60;
+  const nw=new Date(toff==null?VN():VN()-toff*60000),nmin=nw.getHours()*60+nw.getMinutes()+nw.getSeconds()/60;
   const dly=j=>{let v=lgx[j],run='';
     if(v==null&&gpsOn){let k=-1;for(const x in lgx)if(+x<j&&+x>k)k=+x;if(k>=0){v=lgx[k];run=' run'}
       if(j===ci&&st[j]){const sc=tmin(/\d/.test(st[j].dep||'')?st[j].dep:st[j].arr);if(sc!=null){let df=nmin-sc;if(df<-720)df+=1440;if(df>720)df-=1440;const lv=Math.floor(df);if(lv>0&&lv>(v||0)){v=lv;run=' run'}}}}
@@ -238,7 +247,7 @@ function renderDash0(){
   $('#app').innerHTML=`<div class='dvw'><div class='dv'><div class='dmain'><div class='dzn' data-zone='next'></div><div class='dtab'>ダイヤ運行　${esc(s.name)}${gpsMsg?'　'+esc(gpsMsg):''}${toff!=null?'　【試験】':''}</div><div class='dtrip'>${trip?esc(trip.no)+'　'+esc(trip.dest):'—'}</div><div class='dlist' id='dlist'>${st.length?st.map((r,j)=>j===ci?cur:row(r,'dim',j)).join(''):cur}</div></div>
   <div class='dside'><div class='dtop'><div class='dd'>${now.getMonth()+1}月${now.getDate()}日<br>(${'日月火水木金土'[now.getDay()]})</div><div class='dclk' id='dclk'>${p2(now.getHours())}:${p2(now.getMinutes())}</div></div>
   <div class='dbox'><small>便</small><b>${trip&&trip.no?esc(trip.no):'-'}</b></div><div class='dbox'><small>区分</small><b>${trip&&trip.type?esc(trip.type):'-'}</b></div><div class='dbox'><small>停留所</small><b>${st.length?ci+1+'/'+st.length:'-'}</b></div></div>
-  <div class='dkeys'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button></div></div></div>`;
+  <div class='dkeys'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button><button data-act='simp' class='${sim?'on':''}'>試験</button></div></div></div>`;
 }
 function curStops(s){const g=segsOf(s);data.pg=data.pg||{};const pg=Math.max(0,Math.min(data.pg[s.id]||0,g.length-1));return (g[pg]||[]).map(i=>s.rows[i]).filter(r=>r.k==='sta')}
 function autoIdx(st){const d=new Date(),nm=d.getHours()*60+d.getMinutes(),ts=st.map(r=>tmin(/\d/.test(r.dep||'')?r.dep:r.arr));if(!ts.some(t=>t!=null))return null;const f=ts.findIndex(t=>t!=null&&t>=nm);return f>=0?f:st.length-1}
@@ -246,9 +255,9 @@ function dstep(s){const st=curStops(s),ai=autoIdx(st),n=Math.min(st.length-1,dla
 let dto=null,ign=0;
 function dscroll(smooth){const l=$('#dlist');if(!l)return;const c=l.querySelector('.cur');if(!c)return;const t=c.previousElementSibling||c;ign=Date.now()+(smooth?900:300);if(smooth)l.scrollTo({top:t.offsetTop,behavior:'smooth'});else l.scrollTop=t.offsetTop}
 document.addEventListener('scroll',e=>{if(mode!=='dash'||!e.target||e.target.id!=='dlist'||Date.now()<ign)return;clearTimeout(dto);dto=setTimeout(()=>{if(mode==='dash')dscroll(true)},3000)},true);
-let gpsOn=false,gpsId=null,gpsMsg='',wl=null,g={at:-1,max:0,min:1e9,t:0,tl:0},dlog={},toff=null;const GR=40;
+let gpsOn=false,gpsId=null,gpsMsg='',wl=null,g={at:-1,max:0,min:1e9,t:0,tl:0},dlog={},toff=null,sim=null,simSp=10,simDl=0;const GR=40;
 function hav(a,b,c,d){const t=x=>x*Math.PI/180,h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 12742000*Math.asin(Math.sqrt(h))}
-function gpsStop(){if(gpsId!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsId);gpsId=null;gpsOn=false;try{wl&&wl.release()}catch(e){}wl=null}
+function gpsStop(){if(sim){clearInterval(sim.iv);sim=null}if(gpsId!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsId);gpsId=null;gpsOn=false;try{wl&&wl.release()}catch(e){}wl=null}
 function gpsStart(){const s=getStaff(),st=curStops(s);
   if(!navigator.geolocation||!st.some(r=>r.lat&&r.lng)){gpsMsg=navigator.geolocation?'停留所の座標が未登録です':'位置情報に非対応です';renderDash();setTimeout(()=>{if(!gpsOn){gpsMsg='';if(mode==='dash')renderDash()}},4000);return}
   const ai=autoIdx(st);if(dix[s.id]==null)dix[s.id]=ai||0;g={at:-1,max:dix[s.id],min:1e9,t:0,tl:0};dlog[pgKey(s)]={};gpsOn=true;gpsMsg='GPS 測位中';
@@ -256,11 +265,11 @@ function gpsStart(){const s=getStaff(),st=curStops(s);
   try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>wl=l).catch(()=>{})}catch(e){}
   renderDash()}
 function onPos(p){const s=getStaff();if(!s||mode!=='dash'||!gpsOn)return;const st=curStops(s),la=p.coords.latitude,ln=p.coords.longitude,ac=Math.round(p.coords.accuracy);
-  const t=$('.dtab');const say=m=>{gpsMsg=m;if(t)t.textContent='ダイヤ運行\u3000'+s.name+'\u3000'+m};
+  const t=$('.dtab');const say=m=>{m=(sim?'【試験走行】':'')+m;gpsMsg=m;if(t)t.textContent='ダイヤ運行\u3000'+s.name+'\u3000'+m};
   if(ac>80){say('GPS 精度不足 ±'+ac+'m');return}
   const D=j=>{const r=st[j];return r&&r.lat&&r.lng?hav(la,ln,parseFloat(r.lat),parseFloat(r.lng)):null};
   let tgt=g.max,fd=false,chg=false;
-  const key=pgKey(s),lg=dlog[key]=dlog[key]||{},now=Date.now();
+  const key=pgKey(s),lg=dlog[key]=dlog[key]||{},now=VN();
   const rec=(idx,ms)=>{const r=st[idx],sc=tmin(/\d/.test(r.dep||'')?r.dep:r.arr);if(sc==null)return;const dt=new Date(toff==null?ms:ms-toff*60000);let df=dt.getHours()*60+dt.getMinutes()+dt.getSeconds()/60-sc;if(df<-720)df+=1440;if(df>720)df-=1440;lg[idx]=Math.round(df);chg=true};
   for(let j=g.max+1;j<=Math.min(g.max+3,st.length-1);j++){const d=D(j);if(d!=null&&d<GR){tgt=j;fd=true;g.at=j;break}}
   if(!fd){const d=D(g.max);
@@ -306,7 +315,53 @@ async function openMap(i){
   $('#mhere').onclick=()=>{if(!navigator.geolocation){toast('位置情報に非対応です');return}navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],18),()=>toast('位置情報を取得できません'),{enableHighAccuracy:true,timeout:15000})};
   $('#mok').onclick=()=>{const c=map.getCenter();r.lat=c.lat.toFixed(6);r.lng=c.lng.toFixed(6);r.est=false;save();close();renderEdit();toast('登録しました')}}
 function pgKey(s){const n=segsOf(s).length;data.pg=data.pg||{};return s.id+'|'+Math.max(0,Math.min(data.pg[s.id]||0,n-1))}
-function dashTick(){const d=new Date(),c=$('#dclk');if(c)c.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.getMinutes()!==lastMin&&mode==='dash')renderDash()}
+function fitRows(){document.querySelectorAll('.dr:not(.e)').forEach(r=>{const n=r.firstElementChild;if(!n)return;
+  n.style.fontSize='';n.style.whiteSpace='';n.style.textOverflow='';n.style.overflow='';n.style.lineHeight='';
+  const base=parseFloat(getComputedStyle(r).fontSize);let fs=base;
+  while(n.scrollWidth>n.clientWidth+1&&fs>base*0.6){fs*=0.94;n.style.fontSize=fs+'px'}
+  if(n.scrollWidth>n.clientWidth+1){n.style.whiteSpace='normal';n.style.textOverflow='clip';n.style.overflow='visible';n.style.lineHeight='1.15'}})}
+window.addEventListener('resize',()=>{if(mode==='dash')fitRows()});
+//SIM-START
+function VN(){return sim?sim.t:Date.now()}
+function simBuild(st,dl,day0){
+  if(st.length<2)return{err:'停留所が2つ以上必要です'};
+  const pts=st.map(r=>r.lat&&r.lng?[parseFloat(r.lat),parseFloat(r.lng)]:null);
+  if(pts.some(p=>!p))return{err:'全ての停留所に座標が必要です'};
+  const sc=st.map(r=>tmin(/\d/.test(r.dep||'')?r.dep:r.arr));
+  if(sc.some(x=>x==null))return{err:'全ての停留所に時刻が必要です'};
+  const dep=[],arr=[];
+  st.forEach((r,i)=>{const dw=/通過|レ|↓/.test(r.arr||'')?0:20000;let d=day0+(sc[i]+dl)*60000,a=d-dw;if(i>0){a=Math.max(a,dep[i-1]+1000);d=Math.max(d,a)}arr.push(a);dep.push(d)});
+  return{pts:pts,dep:dep,arr:arr,t:arr[0]-60000,endT:dep[dep.length-1]+30000}}
+function simPos(m,t){const n=m.pts.length;if(t<=m.arr[0])return m.pts[0];
+  for(let i=0;i<n;i++){if(t<=m.dep[i])return m.pts[i];
+    if(i<n-1&&t<m.arr[i+1]){const f=(t-m.dep[i])/(m.arr[i+1]-m.dep[i]);return[m.pts[i][0]+(m.pts[i+1][0]-m.pts[i][0])*f,m.pts[i][1]+(m.pts[i+1][1]-m.pts[i][1])*f]}}
+  return m.pts[n-1]}
+//SIM-END
+function simMsg(m){const e=$('#simt');if(e)e.textContent=m}
+function simPanel(){const p=$('.simp');if(!p)return;
+  const b=(act,v,cur,label)=>"<button data-act='"+act+"' data-v='"+v+"' class='"+(cur===v?'on':'')+"'>"+label+"</button>";
+  p.innerHTML="<div class='h'>GPS試験モード（模擬走行）</div>"+
+  "<div class='r'><span>速度</span>"+[1,5,10,30].map(v=>b('simsp',v,simSp,'×'+v)).join('')+"</div>"+
+  "<div class='r'><span>遅れ</span>"+[-2,0,3,10,20].map(v=>b('simdl',v,simDl,(v>0?'+':'')+v+'分')).join('')+"</div>"+
+  "<div class='r'><button class='"+(sim?'stop':'go')+"' data-act='simgo'>"+(sim?'試験走行を停止':'試験走行を開始')+"</button><button data-act='simx'>閉じる</button></div>"+
+  "<div class='t' id='simt'>"+(sim?'':'この便の停留所の座標と時刻を使い、自動で走らせます。遅れの設定は、次の開始から反映されます。')+"</div>"}
+function openSim(){if($('.simw')){return}const w=document.createElement('div');w.className='simw';w.innerHTML="<div class='simp'></div>";document.body.appendChild(w);simPanel()}
+function closeSim(){const w=$('.simw');if(w)w.remove()}
+function simStart(){
+  const s=getStaff(),st=curStops(s),d0=new Date();d0.setHours(0,0,0,0);
+  const m=simBuild(st,simDl,d0.getTime());if(m.err){simMsg(m.err);return}
+  gpsStop();toff=null;m.last=Date.now();sim=m;
+  dix[s.id]=0;g={at:-1,max:0,min:1e9,t:0,tl:0};dlog[pgKey(s)]={};gpsOn=true;gpsMsg='';
+  sim.iv=setInterval(simTick,500);renderDash();simPanel();simTick()}
+function simTick(){if(!sim)return;const n=Date.now();sim.t+=(n-sim.last)*simSp;sim.last=n;
+  const p=simPos(sim,sim.t);
+  onPos({coords:{latitude:p[0],longitude:p[1],accuracy:5}});
+  if(!sim)return;
+  const d=new Date(sim.t),pd=x=>String(x).padStart(2,'0');
+  if(d.getMinutes()!==lastMin&&mode==='dash')renderDash();
+  simMsg('仮想時刻 '+pd(d.getHours())+':'+pd(d.getMinutes())+':'+pd(d.getSeconds())+'　速度×'+simSp+'　遅れ'+(simDl>0?'+':'')+simDl+'分');
+  if(sim&&sim.t>sim.endT){gpsStop();gpsMsg='';renderDash();simPanel();simMsg('試験走行が終わりました')}}
+function dashTick(){const d=new Date(VN()),c=$('#dclk');if(c)c.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.getMinutes()!==lastMin&&mode==='dash')renderDash()}
 function renderTypes(){
   $('#app').innerHTML=`<div class="bar"><h1>区分の編集</h1><button class="pri" data-act="back">完了</button></div>
   <div class="hint">便の「区分」プルダウンに出る項目です。名前を変えると設定済みの便も一緒に変わります。</div>
@@ -341,7 +396,7 @@ function fromText(t){const rows=[];t.split(/\r?\n/).forEach(l=>{if(!l.trim())ret
   if(l[0]==='#'){const a=l.slice(1).split(/[,\t，、]/).map(x=>x.trim());rows.push({k:'trip',no:a[0]||'',type:a[1]||'',dest:a[2]||''})}
   else if(l[0]==='!'||l[0]==='！')rows.push({k:'note',text:l.slice(1).trim()});
   else{const a=l.split(/[,\t，]/).map(x=>x.trim());rows.push({k:'sta',name:a[0]||'',arr:a[1]||'',dep:a[2]||'',trk:a[3]||'',memo:a[4]||'',km:a[5]||'',lat:a[6]||'',lng:a[7]||'',addr:a[8]||''})}});return rows}
-function render(){clearInterval(timer);if(mode!=='dash')gpsStop();
+function render(){clearInterval(timer);if(mode!=='dash'){gpsStop();closeSim()}
   if(mode==='list')renderList();else if(mode==='types')renderTypes();
   else if(mode==='view'){renderView();timer=setInterval(tick,1000)}else if(mode==='dash'){renderDash();timer=setInterval(dashTick,1000)}else renderEdit();
   window.scrollTo(0,0)}
@@ -350,7 +405,7 @@ const blank=()=>({id:uid(),name:'新しい運行表',note:'',rows:[{k:'trip',no:
 document.addEventListener('click',e=>{
   const b=e.target.closest('button[data-act]');
   if(!b){
-    if(mode==='dash'){if(e.target.closest('.dtop')){if(toff!=null)toff=null;else{const sv=getStaff(),r0=curStops(sv)[dlast[0]],sc=r0?tmin(/\d/.test(r0.dep||'')?r0.dep:r0.arr):null,d0=new Date();if(sc!=null)toff=d0.getHours()*60+d0.getMinutes()+d0.getSeconds()/60-sc}renderDash();return}const zn=$('.dzn'),zr=zn&&zn.getBoundingClientRect();if(zr&&e.clientX>=zr.left&&e.clientX<=zr.right&&e.clientY>=zr.top&&e.clientY<=zr.bottom){dstep(getStaff());return}dix[cur]=Math.max(0,dlast[0]-1);renderDash();return}
+    if(mode==='dash'){if(e.target.closest('.simp'))return;if(e.target.closest('.dtop')){if(toff!=null)toff=null;else{const sv=getStaff(),r0=curStops(sv)[dlast[0]],sc=r0?tmin(/\d/.test(r0.dep||'')?r0.dep:r0.arr):null,d0=new Date();if(sc!=null)toff=d0.getHours()*60+d0.getMinutes()+d0.getSeconds()/60-sc}renderDash();return}const zn=$('.dzn'),zr=zn&&zn.getBoundingClientRect();if(zr&&e.clientX>=zr.left&&e.clientX<=zr.right&&e.clientY>=zr.top&&e.clientY<=zr.bottom){dstep(getStaff());return}dix[cur]=Math.max(0,dlast[0]-1);renderDash();return}
     if(mode!=='view')return;
     const st=e.target.closest('.st');if(!st)return;
     const i=+st.dataset.ri;data.marks=data.marks||{};
@@ -383,6 +438,11 @@ document.addEventListener('click',e=>{
   else if(a==='dnext'){dstep(s)}
   else if(a==='bkexp'){try{const bl=new Blob([JSON.stringify(data)],{type:'application/json'}),u=URL.createObjectURL(bl),k=document.createElement('a'),d=new Date();k.href=u;k.download='bus-staff-backup-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';document.body.appendChild(k);k.click();k.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(er){toast('保存に失敗しました')}}
   else if(a==='bkimp'){$('#bkf').click()}
+  else if(a==='simp'){openSim()}
+  else if(a==='simx'){closeSim()}
+  else if(a==='simsp'){simSp=+b.dataset.v;simPanel()}
+  else if(a==='simdl'){simDl=+b.dataset.v;simPanel()}
+  else if(a==='simgo'){if(sim){gpsStop();gpsMsg='';renderDash();simPanel()}else simStart()}
   else if(a==='dgps'){if(gpsOn){gpsStop();gpsMsg='';renderDash()}else gpsStart()}
   else if(a==='mappick'){openMap(i)}
   else if(a==='est'){const r=s.rows[i];if(!r.addr){toast('住所を入力してください');return}estimate(r)}
