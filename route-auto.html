@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6fa4">
+<title>運行表 自動作成</title>
+<style>
+:root{--bg:#eef1f3;--card:#fff;--ink:#16212b;--sub:#5d6b77;--line:#c9d1d8;--accent:#0b6fa4;--ok:#1b7f3b;--danger:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1419;--card:#16202a;--ink:#e8eef2;--sub:#93a1ac;--line:#2c3a46;--accent:#5cb6e8;--ok:#6fd08c;--danger:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;font-size:16px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px;min-height:40px}
+button.pri{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+button:disabled{opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:40px}
+textarea{min-height:64px}
+.wrap{max-width:760px;margin:0 auto;padding:12px}
+h1{font-size:20px;margin:4px 0 12px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 8px}
+label{display:block;font-size:13px;color:var(--sub);margin:8px 0 2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row{display:flex;gap:6px;align-items:flex-end}.row>div{flex:1}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.btns button{flex:1}
+.hint{font-size:13px;color:var(--sub);margin:6px 0}
+.msg{font-size:14px;margin-top:8px;white-space:pre-wrap}.msg.ok{color:var(--ok)}.msg.ng{color:var(--danger)}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) 4.2em 4.4em;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.item input[type=checkbox]{width:22px;min-height:22px}
+.item input[type=text]{min-height:36px;padding:4px 6px}
+.item .km{font-size:13px;color:var(--sub);text-align:right}
+.item .tm{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.tag{font-size:11px;border-radius:4px;padding:0 4px;margin-left:4px;background:var(--bg);color:var(--sub)}
+svg{width:100%;height:auto;background:var(--bg);border-radius:8px}
+textarea#out{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:140px}
+details{margin-top:8px}summary{cursor:pointer;color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;z-index:20}
+footer{font-size:12px;color:var(--sub);margin:8px 0 24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>運行表 自動作成</h1>
+
+<section>
+<h2>出発地・到着地・出発時刻</h2>
+<div class="row"><div><label>出発地（地名・住所・座標・地図URL）</label><input id="from" placeholder="例: 東京駅"></div><button data-act="here" title="現在地">📍</button></div>
+<div class="row"><div><label>到着地</label><input id="to" placeholder="例: 新宿駅西口"></div><button data-act="swap" title="入れ替え">⇅</button></div>
+<div class="g2">
+<div><label>出発時刻</label><input id="dep" type="time" value="06:10"></div>
+<div><label>経由地の数</label><select id="cnt"><option value="3">少なめ（3）</option><option value="6" selected>ふつう（6）</option><option value="10">多め（10）</option><option value="0">バス停すべて</option></select></div>
+<div><label>経由地の種類</label><select id="kind"><option value="both" selected>バス停＋ランドマーク（ランドマーク優先）</option><option value="bus">バス停のみ</option><option value="lm">ランドマークのみ（駅・病院など）</option></select></div>
+<div><label>便番号</label><input id="no" value="101"></div>
+</div>
+<label>必ず通る地点（任意・1行に1か所。実際のバス路線に合わせたいとき）</label>
+<textarea id="must" placeholder="例:&#10;旧街道入口&#10;市民病院前"></textarea>
+<details><summary>詳細設定</summary>
+<div class="g2">
+<div><label>所要時間の倍率（バスは車より遅め）</label><input id="fac" value="1.3" inputmode="decimal"></div>
+<div><label>各停留所の停車秒数</label><input id="dwell" value="20" inputmode="numeric"></div>
+<div><label>区分</label><select id="type"><option>普通</option><option>急行</option><option>快速</option><option>回送</option></select></div>
+<div><label>運行表名</label><input id="sname" value="自動作成"></div>
+</div>
+<label>経路計算サーバー（OSRM）</label><input id="osrm" value="https://router.project-osrm.org">
+<label>地図データ検索サーバー（Overpass）</label><input id="ovp" value="https://overpass-api.de/api/interpreter">
+</details>
+<div class="btns"><button class="pri" id="go" data-act="go">経路と経由地を作成</button></div>
+<div id="msg" class="msg"></div>
+</section>
+
+<section id="res" hidden>
+<h2>結果</h2>
+<div id="sum" class="hint"></div>
+<div id="map"></div>
+<div class="hint">チェックを外した経由地は除いて、時刻を再計算します。名前は書き換えできます。</div>
+<div id="list"></div>
+</section>
+
+<section id="outs" hidden>
+<h2>出力</h2>
+<textarea id="out" readonly></textarea>
+<div class="btns"><button class="pri" data-act="copy">コピー</button><button id="addapp" data-act="addapp" hidden>運行表アプリに追加</button></div>
+<div id="omsg" class="msg"></div>
+<div class="hint">コピーしたテキストは、運行表アプリの編集画面「テキスト入出力」→「テキストで置き換え」に貼り付けます。座標と距離も入ります。</div>
+</section>
+
+<footer>経路: OSRM（OpenStreetMapデータ）／停留所・施設: OpenStreetMap contributors／地名検索: 国土地理院、Nominatim<br>
+所要時間は自動車の経路を元にした推定で、実際のバスのダイヤや路線とは異なります。必ず実際の運行に合わせて修正してください。</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const APPKEY='bus-staff-app-v1';
+//CORE-START
+function hav(a,b,c,d){const t=x=>x*Math.PI/180,h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 12742000*Math.asin(Math.sqrt(h))}
+function parseCoord(v){const pz=/!2z([A-Za-z0-9+\/_-]+)/.exec(v);if(pz){try{let b=pz[1].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const r=parseCoord(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));if(r)return r}catch(e){}}try{v=decodeURIComponent(v)}catch(e){}v=String(v).replace(/\+/g,' ');const em=/!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)/.exec(v);if(em)return[parseFloat(em[2]),parseFloat(em[1])];const m=/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/.exec(v)||/@(-?\d+\.\d+),(-?\d+\.\d+)/.exec(v)||/^\s*(-?\d{1,3}\.\d+)\s*[,，、\s]\s*(-?\d{1,3}\.\d+)\s*$/.exec(v);return m?[parseFloat(m[1]),parseFloat(m[2])]:null}
+function cumDist(pts){const c=[0];for(let i=1;i<pts.length;i++)c.push(c[i-1]+hav(pts[i-1][1],pts[i-1][0],pts[i][1],pts[i][0]));return c}
+function project(pts,cd,lat,lng){
+  const k=Math.cos(lat*Math.PI/180),M=111320;let best=null;
+  for(let i=0;i<pts.length-1;i++){
+    const ax=(pts[i][0]-lng)*k*M,ay=(pts[i][1]-lat)*M,bx=(pts[i+1][0]-lng)*k*M,by=(pts[i+1][1]-lat)*M;
+    const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;let t=L2?(-(ax*dx+ay*dy))/L2:0;t=Math.max(0,Math.min(1,t));
+    const px=ax+t*dx,py=ay+t*dy,off=Math.hypot(px,py);
+    if(!best||off<best.off){best={off:off,d:cd[i]+t*(cd[i+1]-cd[i]),side:(dx*(-ay)-dy*(-ax))>0?1:-1}}}
+  return best}
+function dedupe(c){
+  const out=[];c.slice().sort((a,b)=>a.d-b.d).forEach(x=>{
+    const j=out.findIndex(y=>y.name===x.name&&y.kind===x.kind&&Math.abs(y.d-x.d)<250);
+    if(j<0){out.push(x);return}
+    const y=out[j],better=(x.side>y.side)||(x.side===y.side&&x.off<y.off);if(better)out[j]=x});
+  return out.sort((a,b)=>a.d-b.d)}
+function pickStops(cands,L,N,prefLm,must){
+  const MIN=150,list=dedupe(cands.filter(c=>c.d>MIN&&c.d<L-MIN&&c.kind!=='must'));let chosen=[];
+  if(N===0){chosen=list}
+  else{const used=new Set(),half=L/(2*(N+1));
+    for(let k=1;k<=N;k++){const tg=k*L/(N+1);let best=null,bs=1e18;
+      list.forEach((c,i)=>{if(used.has(i))return;const dd=Math.abs(c.d-tg);if(dd>half)return;
+        const s=dd/half+(prefLm&&c.kind==='lm'?-0.6:0);if(s<bs){bs=s;best=i}});
+      if(best!=null){used.add(best);chosen.push(list[best])}}}
+  let all=chosen.concat(must).sort((a,b)=>a.d-b.d);const res=[];
+  all.forEach(c=>{const p=res[res.length-1];
+    if(p&&c.d-p.d<MIN){if(c.kind==='must'&&p.kind!=='must')res[res.length-1]=c;return}res.push(c)});
+  return res}
+function timeAt(d,cd,ct){let lo=0,hi=cd.length-1;if(d<=0)return 0;if(d>=cd[hi])return ct[hi];
+  while(hi-lo>1){const m=(lo+hi)>>1;if(cd[m]<=d)lo=m;else hi=m}
+  const f=(d-cd[lo])/((cd[hi]-cd[lo])||1);return ct[lo]+f*(ct[hi]-ct[lo])}
+function fmtT(sec){const m=Math.round(sec/60);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function schedule(depSec,rows,cd,ct,fac,dwell){
+  let v=0;return rows.map((r,i)=>{const last=i===rows.length-1,first=i===0;
+    const arr=depSec+fac*timeAt(r.d,cd,ct)+dwell*v;if(!first&&!last)v++;
+    return fmtT(first||last?arr:arr+dwell)})}
+//CORE-END
+const clean=s=>String(s==null?'':s).replace(/[,，\t、\r\n]+/g,' ').trim();
+let R=null;
+function toast(t){document.querySelectorAll('.toast').forEach(e=>e.remove());const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
+function say(t,ok){const e=$('#msg');e.textContent=t;e.className='msg '+(ok?'ok':'ng')}
+async function jget(url,opt,ms){const c=new AbortController(),to=setTimeout(()=>c.abort(),ms||30000);
+  try{const r=await fetch(url,Object.assign({signal:c.signal},opt||{}));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(to)}}
+async function geocode(q){
+  const c=parseCoord(q);if(c)return{lat:c[0],lng:c[1],label:q};
+  try{const j=await jget('https://msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(q),0,15000);
+    const g=j&&j[0]&&j[0].geometry&&j[0].geometry.coordinates;if(g)return{lat:+g[1],lng:+g[0],label:(j[0].properties&&j[0].properties.title)||q}}catch(e){}
+  const j=await jget('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ja&countrycodes=jp&q='+encodeURIComponent(q),0,15000);
+  if(j&&j[0])return{lat:+j[0].lat,lng:+j[0].lon,label:j[0].display_name};
+  throw new Error('見つかりません: '+q)}
+async function route(base,wps){
+  const co=wps.map(w=>w.lng+','+w.lat).join(';');
+  const j=await jget(base.replace(/\/$/,'')+'/route/v1/driving/'+co+'?overview=full&geometries=geojson&annotations=duration&steps=false',0,40000);
+  if(!j.routes||!j.routes[0])throw new Error('経路が見つかりません');
+  const r=j.routes[0],pts=r.geometry.coordinates,cd=cumDist(pts);let du=[];
+  (r.legs||[]).forEach(l=>{if(l.annotation&&l.annotation.duration)du=du.concat(l.annotation.duration)});
+  let ct;if(du.length===pts.length-1){ct=[0];du.forEach(x=>ct.push(ct[ct.length-1]+x))}
+  else{const T=r.duration,L=cd[cd.length-1]||1;ct=cd.map(d=>T*d/L)}
+  return{pts:pts,cd:cd,ct:ct,L:cd[cd.length-1],T:ct[ct.length-1]}}
+async function landmarks(base,pts,L,kind){
+  const step=Math.max(1,Math.ceil(pts.length/(Math.min(150,Math.max(20,L/250))))),poly=[];
+  for(let i=0;i<pts.length;i+=step)poly.push(pts[i][1].toFixed(5)+','+pts[i][0].toFixed(5));
+  const lp=pts[pts.length-1];poly.push(lp[1].toFixed(5)+','+lp[0].toFixed(5));const P=poly.join(',');
+  let q='[out:json][timeout:40];(';
+  if(kind!=='lm')q+='node(around:45,'+P+')["highway"="bus_stop"];';
+  if(kind!=='bus')q+='nwr(around:90,'+P+')["railway"~"^(station|halt|tram_stop)$"];nwr(around:90,'+P+')["amenity"~"^(hospital|townhall|university|college|library|police|post_office)$"];';
+  q+=');out center tags;';
+  const j=await jget(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)},50000);
+  const out=[];(j.elements||[]).forEach(e=>{const t=e.tags||{};let n=t['name:ja']||t.name;if(!n)return;
+    const lat=e.lat!=null?e.lat:e.center&&e.center.lat,lng=e.lon!=null?e.lon:e.center&&e.center.lon;if(lat==null)return;
+    const bus=t.highway==='bus_stop';if(!bus&&/^(station|halt)$/.test(t.railway)&&!/駅$/.test(n))n+='駅';
+    out.push({name:n,lat:lat,lng:lng,kind:bus?'bus':'lm'})});
+  return out}
+
+async function go(){
+  const from=$('#from').value.trim(),to=$('#to').value.trim();
+  if(!from||!to){say('出発地と到着地を入力してください',0);return}
+  const b=$('#go');b.disabled=true;
+  try{
+    say('地点を検索中…',1);
+    const o=await geocode(from),d=await geocode(to);
+    const mustQ=$('#must').value.split('\n').map(s=>s.trim()).filter(Boolean),ms=[];
+    for(const q of mustQ){const g=await geocode(q);ms.push({name:q,lat:g.lat,lng:g.lng})}
+    say('経路を計算中…',1);
+    const rt=await route($('#osrm').value,[o].concat(ms,[d]));
+    const kind=$('#kind').value;let cands=[];
+    say('経路沿いの停留所・施設を検索中…（数十秒かかることがあります）',1);
+    try{cands=await landmarks($('#ovp').value,rt.pts,rt.L,kind)}catch(e){say('停留所・施設の検索に失敗しました（'+e.message+'）。出発地・到着地・必ず通る地点だけで作成します',0)}
+    cands.forEach(c=>{const p=project(rt.pts,rt.cd,c.lat,c.lng);c.d=p.d;c.off=p.off;c.side=p.side});
+    cands=cands.filter(c=>c.off<=(c.kind==='bus'?45:90));
+    const must=ms.map(m=>{const p=project(rt.pts,rt.cd,m.lat,m.lng);return{name:m.name,lat:m.lat,lng:m.lng,kind:'must',d:p.d,off:p.off,side:1}});
+    const N=parseInt($('#cnt').value,10);
+    const picked=pickStops(cands,rt.L,N,kind==='both',must);
+    R={rt:rt,rows:[{name:clean(from),lat:o.lat,lng:o.lng,d:0,kind:'end',on:true}].concat(picked.map(p=>Object.assign({on:true},p)),[{name:clean(to),lat:d.lat,lng:d.lng,d:rt.L,kind:'end',on:true}])};
+    $('#res').hidden=false;$('#outs').hidden=false;render();
+    say('作成しました（経由地 '+picked.length+'か所）。内容を確認して、必要に応じて修正してください',1);
+  }catch(e){say('作成できませんでした: '+e.message+'\n公開した場所（https）で開いているか、通信できる環境かを確認してください',0)}
+  b.disabled=false}
+
+function active(){return R.rows.filter(r=>r.on)}
+function times(){
+  const m=/^(\d{1,2}):(\d{2})/.exec($('#dep').value||'06:00'),dep=(+m[1]*60+ +m[2])*60;
+  const fac=parseFloat($('#fac').value)||1.3,dw=Math.max(0,parseInt($('#dwell').value,10)||0);
+  return schedule(dep,active(),R.rt.cd,R.rt.ct,fac,dw)}
+function render(){
+  const act=active(),ts=times();let k=0;
+  $('#sum').textContent='距離 '+(R.rt.L/1000).toFixed(1)+'km／所要 '+(ts[0]+' → '+ts[ts.length-1]);
+  $('#list').innerHTML=R.rows.map((r,i)=>{let t='';if(r.on){t=ts[k++]}
+    return '<div class="item"><input type="checkbox" data-i="'+i+'" '+(r.on?'checked':'')+(r.kind==='end'?' disabled':'')+'><div><input type="text" data-n="'+i+'" value="'+esc(r.name)+'">'+(r.kind==='bus'?'<span class="tag">バス停</span>':r.kind==='lm'?'<span class="tag">ランドマーク</span>':r.kind==='must'?'<span class="tag">指定</span>':'')+'</div><div class="km">'+(r.d/1000).toFixed(1)+'km</div><div class="tm">'+(t||'—')+'</div></div>'}).join('');
+  drawMap();out()}
+function drawMap(){
+  const pts=R.rt.pts,st=Math.max(1,Math.floor(pts.length/300));let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;const k=Math.cos(pts[0][1]*Math.PI/180);
+  const P=pts.filter((_,i)=>i%st===0).concat([pts[pts.length-1]]).map(p=>[p[0]*k,-p[1]]);
+  P.forEach(p=>{mnx=Math.min(mnx,p[0]);mxx=Math.max(mxx,p[0]);mny=Math.min(mny,p[1]);mxy=Math.max(mxy,p[1])});
+  const W=300,H=160,pad=12,sc=Math.min((W-2*pad)/((mxx-mnx)||1e-9),(H-2*pad)/((mxy-mny)||1e-9));
+  const X=x=>pad+(x-mnx)*sc,Y=y=>pad+(y-mny)*sc;
+  let s='<svg viewBox="0 0 '+W+' '+H+'"><polyline fill="none" stroke="#0b6fa4" stroke-width="2.5" points="'+P.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')+'"/>';
+  active().forEach((r,i,a)=>{const x=X(r.lng*k),y=Y(-r.lat),e=i===0||i===a.length-1;s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(e?5:3.5)+'" fill="'+(e?'#b3261e':'#ffd23f')+'" stroke="#16212b" stroke-width="1"/>'});
+  $('#map').innerHTML=s+'</svg>'}
+function out(){
+  const act=active(),ts=times(),type=$('#type').value,no=clean($('#no').value)||'1';
+  const lines=['#'+no+','+type+','+clean(act[0].name)+'→'+clean(act[act.length-1].name)];
+  act.forEach((r,i)=>{lines.push([clean(r.name),'',ts[i],'','',(r.d/1000).toFixed(1),r.lat.toFixed(6),r.lng.toFixed(6),''].join(','))});
+  $('#out').value=lines.join('\n');return{lines:lines,act:act,ts:ts,type:type,no:no}}
+
+document.addEventListener('click',async e=>{const b=e.target.closest('button[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='go')go();
+  else if(a==='swap'){const t=$('#from').value;$('#from').value=$('#to').value;$('#to').value=t}
+  else if(a==='here'){if(!navigator.geolocation){toast('位置情報に非対応です');return}toast('測位中…');navigator.geolocation.getCurrentPosition(p=>{$('#from').value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6)},()=>toast('位置情報を取得できません'),{enableHighAccuracy:true,timeout:15000})}
+  else if(a==='copy'){const t=$('#out');t.select();let ok=false;try{ok=navigator.clipboard?(await navigator.clipboard.writeText(t.value),true):document.execCommand('copy')}catch(x){try{ok=document.execCommand('copy')}catch(y){}}
+    const m=$('#omsg');m.textContent=ok?'コピーしました':'コピーできませんでした。テキストを長押しして選択してください';m.className='msg '+(ok?'ok':'ng')}
+  else if(a==='addapp'){const m=$('#omsg');try{const d=JSON.parse(localStorage.getItem(APPKEY)),o=out();
+    const rows=[{k:'trip',no:o.no,type:o.type,dest:clean(o.act[0].name)+'→'+clean(o.act[o.act.length-1].name)}];
+    o.act.forEach((r,i)=>rows.push({k:'sta',name:clean(r.name),arr:'',dep:o.ts[i],trk:'',memo:'',km:(r.d/1000).toFixed(1),lat:r.lat.toFixed(6),lng:r.lng.toFixed(6),addr:'',est:false}));
+    d.staffs.unshift({id:Math.random().toString(36).slice(2,9),name:clean($('#sname').value)||'自動作成',note:'',rows:rows});
+    if(Array.isArray(d.types)&&!d.types.includes(o.type))d.types.push(o.type);
+    localStorage.setItem(APPKEY,JSON.stringify(d));m.textContent='運行表アプリに追加しました。アプリを開いて確認してください';m.className='msg ok'}catch(x){m.textContent='追加できませんでした';m.className='msg ng'}}
+});
+document.addEventListener('change',e=>{const t=e.target;if(!R)return;
+  if(t.dataset.i!=null){R.rows[+t.dataset.i].on=t.checked;render()}
+  else if(['dep','fac','dwell','type','no'].includes(t.id))render()});
+document.addEventListener('input',e=>{const t=e.target;if(!R)return;
+  if(t.dataset.n!=null){R.rows[+t.dataset.n].name=t.value;out()}
+  else if(['dep','fac','dwell','no'].includes(t.id)){const s=document.querySelector('#list');if(s)render()}});
+try{if(localStorage.getItem(APPKEY))$('#addapp').hidden=false}catch(e){}
+})();
+</script>
+</body>
+</html>

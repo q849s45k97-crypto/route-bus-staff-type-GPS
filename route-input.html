@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6fa4">
+<title>運行表 入力ツール</title>
+<style>
+:root{--bg:#eef1f3;--card:#fff;--ink:#16212b;--sub:#5d6b77;--line:#c9d1d8;--accent:#0b6fa4;--ok:#1b7f3b;--danger:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1419;--card:#16202a;--ink:#e8eef2;--sub:#93a1ac;--line:#2c3a46;--accent:#5cb6e8;--ok:#6fd08c;--danger:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;font-size:16px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px;min-height:40px}
+button.pri{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:40px}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;min-height:150px}
+.wrap{max-width:760px;margin:0 auto;padding:12px}
+h1{font-size:20px;margin:4px 0 12px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 8px}
+h2 span{display:inline-block;background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;text-align:center;line-height:24px;font-size:14px;margin-right:6px}
+label{display:block;font-size:13px;color:var(--sub);margin:6px 0 2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btns button{flex:1}
+.hint{font-size:13px;color:var(--sub);margin:6px 0}
+.msg{font-size:14px;margin-top:6px}.msg.ok{color:var(--ok)}.msg.ng{color:var(--danger)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{border:1px solid var(--line);padding:3px 8px;text-align:center}
+th{background:var(--bg)}td:first-child,th:first-child{position:sticky;left:0;background:var(--card);text-align:left}
+.sc{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px}
+.sc .nm{font-weight:700;margin-bottom:4px}.sc .st{font-size:13px;color:var(--ok)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;z-index:20}
+details{margin-top:8px}summary{cursor:pointer;color:var(--accent)}
+pre{background:var(--bg);padding:8px;border-radius:6px;overflow-x:auto;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>運行表 入力ツール</h1>
+
+<section>
+<h2><span>1</span>時刻表を貼り付け</h2>
+<textarea id="src" spellcheck="false" placeholder="ExcelやWebの時刻表をそのままコピーして貼り付け&#10;&#10;例（停留所が行・便が列）:&#10;停留所	101	103	105&#10;駅前	6:10	6:40	7:10&#10;中央通り	6:14	6:44	7:14&#10;市民病院	6:31	7:01	7:31"></textarea>
+<div class="g2">
+<div><label>表の向き</label><select id="mode"><option value="auto">自動判定</option><option value="rows">停留所が行・便が列</option><option value="cols">便が行・停留所が列</option><option value="list">1行1停留所（1便だけ）</option></select></div>
+<div><label>区分</label><select id="type"><option>普通</option><option>急行</option><option>快速</option><option>回送</option><option>出庫</option><option>入庫</option></select></div>
+<div><label>運行表名（運番など）</label><input id="sname" value="新しい運行表"></div>
+<div><label>便番号（表に無いとき 1便目の番号）</label><input id="tno" value="1" inputmode="numeric"></div>
+</div>
+<div class="btns"><button class="pri" data-act="parse">解析する</button><button data-act="sample">例を入れる</button></div>
+<div id="pmsg" class="msg"></div>
+<div class="hint">時刻は「6:10」「06:10」「6.10」「610」に対応。「レ」「↓」「通過」は通過、空欄や「-」はその便が停まらない扱いです。</div>
+</section>
+
+<section id="s2" hidden>
+<h2><span>2</span>読み取り結果</h2>
+<div class="scroll" id="prev"></div>
+</section>
+
+<section id="s3" hidden>
+<h2><span>3</span>停留所ごとの設定（任意）</h2>
+<div class="hint">名前の修正、のりば、注意事項、座標を設定できます。座標は住所から取得するか、地図の座標・URLを貼り付けます。</div>
+<div class="btns"><button data-act="geoall">住所を全部取得</button></div>
+<div id="stl" style="margin-top:8px"></div>
+<label><input type="checkbox" id="dist" style="width:auto;min-height:0"> 座標から距離(km)を自動入力する（直線距離）</label>
+<label>時刻を一括でずらす（分・マイナス可）</label><input id="shift" value="0" inputmode="numeric">
+</section>
+
+<section id="s4" hidden>
+<h2><span>4</span>出力</h2>
+<textarea id="out" readonly></textarea>
+<div class="btns"><button class="pri" data-act="copy">コピー</button><button id="addapp" data-act="addapp" hidden>運行表アプリに追加</button></div>
+<div id="omsg" class="msg"></div>
+<div class="hint">コピーしたテキストは、運行表アプリの編集画面「テキスト入出力」→「テキストで置き換え」に貼り付けます。同じ場所に置いたアプリがあれば、「運行表アプリに追加」で直接追加できます。</div>
+</section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const APPKEY='bus-staff-app-v1';
+//CORE-START
+function normT(h,m){return String(+h).padStart(2,'0')+':'+m}
+function lastTime(c){const re=/(\d{1,2})\s*[:：.．時]\s*(\d{2})/g;let m,l=null;while((m=re.exec(c)))l=m;if(l)return normT(l[1],l[2]);
+  const q=/^\s*(\d{1,2})(\d{2})\s*$/.exec(c);if(q&&+q[2]<60&&c.trim().length>=3)return normT(q[1],q[2]);return null}
+function cellInfo(c){c=(c||'').trim();const t=lastTime(c);
+  if(t)return{t:t,pas:/通過|レ|ﾚ|↓/.test(c)};
+  if(/^(レ|ﾚ|↓+|▼|｜|\||‖|通過)$/.test(c))return{t:'',pas:true};return null}
+function splitLine(l,mode){if(mode==='tab')return l.split('\t');if(mode==='csv')return l.split(/[,，]/);return l.trim().split(/\s+/)}
+function toGrid(text){const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim());if(!lines.length)return[];
+  const mode=lines.some(l=>l.includes('\t'))?'tab':lines.some(l=>/[,，]/.test(l))?'csv':'sp';
+  const g=lines.map(l=>splitLine(l,mode).map(x=>x.trim()));const w=Math.max.apply(null,g.map(r=>r.length));
+  g.forEach(r=>{while(r.length<w)r.push('')});return g}
+function transpose(g){return g[0].map((_,j)=>g.map(r=>r[j]))}
+function labelLike(c){return /^[\dA-Za-z\-]{1,6}便?$/.test(c)||c===''}
+function parseMatrix(g,orient){
+  if(orient==='cols'||(orient==='auto'&&g.slice(1).map(r=>r[0]).filter(c=>!labelLike(c)).length<(g.length-1)/2))g=transpose(g);
+  const trips=[];
+  for(let j=1;j<g[0].length;j++){const rows=[];
+    for(let i=1;i<g.length;i++){const nm=(g[i][0]||'').trim();if(!nm)continue;const ci=cellInfo(g[i][j]);if(ci)rows.push({name:nm,dep:ci.t,pas:ci.pas})}
+    if(rows.length)trips.push({no:(g[0][j]||'').replace(/便$/,''),rows:rows})}
+  return trips}
+function parseList(text){const rows=[];text.replace(/\r/g,'').split('\n').forEach(l=>{l=l.trim();if(!l)return;
+  const re=/(\d{1,2})\s*[:：.．時]\s*(\d{2})/g;let m,lm=null;while((m=re.exec(l)))lm=m;
+  const pas=/通過|レ|↓/.test(l);let name=l;if(lm)name=l.replace(lm[0],'');
+  name=name.replace(/通過|発|着|レ|↓/g,'').replace(/[\s,，\t]+$/,'').replace(/^[\s,，\t]+/,'').trim();
+  if(name)rows.push({name:name,dep:lm?normT(lm[1],lm[2]):'',pas:pas})});
+  return rows.length?[{no:'',rows:rows}]:[]}
+function hav(a,b,c,d){const t=x=>x*Math.PI/180,h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 12742000*Math.asin(Math.sqrt(h))}
+function parseCoord(v){const pz=/!2z([A-Za-z0-9+\/_-]+)/.exec(v);if(pz){try{let b=pz[1].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const r=parseCoord(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));if(r)return r}catch(e){}}try{v=decodeURIComponent(v)}catch(e){}v=String(v).replace(/\+/g,' ');const em=/!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)/.exec(v);if(em)return[parseFloat(em[2]),parseFloat(em[1])];const m=/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/.exec(v)||/@(-?\d+\.\d+),(-?\d+\.\d+)/.exec(v)||/(-?\d{1,3}\.\d+)\s*[,，、\s]\s*(-?\d{1,3}\.\d+)/.exec(v);if(m)return[parseFloat(m[1]),parseFloat(m[2])];
+  const d=/(\d{1,3})°\s*(\d{1,2})['′]\s*(\d{1,2}(?:\.\d+)?)["″]?\s*([NS])[\s,，]*(\d{1,3})°\s*(\d{1,2})['′]\s*(\d{1,2}(?:\.\d+)?)["″]?\s*([EW])/i.exec(v);
+  if(d){const f=(a,b,c,h)=>(+a+ +b/60+ +c/3600)*(/[SW]/i.test(h)?-1:1);return[f(d[1],d[2],d[3],d[4]),f(d[5],d[6],d[7],d[8])]}return null}
+function shiftT(t,m){if(!t||!m)return t;const x=/^(\d+):(\d{2})$/.exec(t);if(!x)return t;let v=+x[1]*60+ +x[2]+m;if(v<0)v=0;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
+//CORE-END
+const clean=s=>String(s==null?'':s).replace(/[,，\t、\r\n]+/g,' ').trim();
+let S={trips:[],stops:[],meta:{}};
+
+function toast(t){document.querySelectorAll('.toast').forEach(e=>e.remove());const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
+function doParse(){
+  const text=$('#src').value;const mode=$('#mode').value;let trips=[];
+  if(!text.trim()){msg('#pmsg','時刻表を貼り付けてください',0);return}
+  if(mode==='list')trips=parseList(text);else{const g=toGrid(text);if(g.length>=2&&g[0].length>=2)trips=parseMatrix(g,mode)}
+  if(!trips.length){msg('#pmsg','読み取れませんでした。表の向きを変えるか、時刻の形式を確認してください',0);return}
+  let n=parseInt($('#tno').value,10);if(isNaN(n))n=1;
+  trips.forEach((t,i)=>{if(!t.no)t.no=String(n+i)});
+  const stops=[];trips.forEach(t=>t.rows.forEach(r=>{if(!stops.includes(r.name))stops.push(r.name)}));
+  const meta={};stops.forEach(s=>{meta[s]=(S.meta[s])||{name:s,addr:'',coord:'',lat:'',lng:'',trk:'',memo:''}});
+  S={trips:trips,stops:stops,meta:meta};
+  msg('#pmsg',trips.length+'便・'+stops.length+'停留所を読み取りました',1);
+  ['#s2','#s3','#s4'].forEach(s=>$(s).hidden=false);
+  renderPrev();renderStops();renderOut();
+}
+function msg(sel,t,ok){const e=$(sel);e.textContent=t;e.className='msg '+(ok?'ok':'ng')}
+function renderPrev(){
+  let h='<table><tr><th>停留所＼便</th>'+S.trips.map((t,i)=>'<th>'+esc(t.no)+'</th>').join('')+'</tr>';
+  S.stops.forEach(s=>{h+='<tr><td>'+esc(S.meta[s].name)+'</td>'+S.trips.map(t=>{const r=t.rows.find(x=>x.name===s);return '<td>'+(r?(r.pas?(r.dep?esc(r.dep)+'<small>通過</small>':'通過'):esc(r.dep)):'')+'</td>'}).join('')+'</tr>'});
+  $('#prev').innerHTML=h+'</table>';
+}
+function renderStops(){
+  $('#stl').innerHTML=S.stops.map((s,i)=>{const m=S.meta[s];
+    return '<div class="sc"><div class="nm">'+esc(s)+'</div><div class="g2">'+
+    '<div><label>表示名</label><input data-i="'+i+'" data-f="name" value="'+esc(m.name)+'"></div>'+
+    '<div><label>のりば</label><input data-i="'+i+'" data-f="trk" value="'+esc(m.trk)+'"></div>'+
+    '<div style="grid-column:1/-1"><label>注意事項（⚠で赤帯）</label><input data-i="'+i+'" data-f="memo" value="'+esc(m.memo)+'" placeholder="⚠ 踏切 一旦停止"></div>'+
+    '<div style="grid-column:1/-1"><label>住所</label><input data-i="'+i+'" data-f="addr" value="'+esc(m.addr)+'" placeholder="東京都千代田区丸の内1-9-1"></div>'+
+    '<div style="grid-column:1/-1"><label>座標（緯度, 経度／地図URLも可）</label><input data-i="'+i+'" data-c="1" value="'+esc(m.lat?m.lat+', '+m.lng:'')+'"></div></div>'+
+    '<div class="btns"><button data-act="geo" data-i="'+i+'">住所から取得</button><a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(m.addr||m.name)+'" target="_blank" rel="noopener"><button type="button">地図で探す</button></a></div>'+
+    '<div class="st" id="st'+i+'">'+(m.lat?'座標あり':'')+'</div></div>'}).join('');
+}
+function distFill(rows){
+  if(!$('#dist').checked)return rows.map(()=>'');
+  const out=[];let cum=0,prev=null,ok=true;
+  rows.forEach(r=>{const m=S.meta[r.name];if(!m.lat){ok=false;out.push('');return}
+    const p=[parseFloat(m.lat),parseFloat(m.lng)];if(prev)cum+=hav(prev[0],prev[1],p[0],p[1]);prev=p;out.push((cum/1000).toFixed(1))});
+  return ok?out:rows.map(()=>'')}
+function build(){
+  const sh=parseInt($('#shift').value,10)||0,type=$('#type').value,lines=[],rows=[];
+  S.trips.forEach(t=>{
+    const first=S.meta[t.rows[0].name].name,last=S.meta[t.rows[t.rows.length-1].name].name,dest=first+'→'+last;
+    lines.push('#'+clean(t.no)+','+type+','+clean(dest));rows.push({k:'trip',no:clean(t.no),type:type,dest:clean(dest)});
+    const kms=distFill(t.rows);
+    t.rows.forEach((r,i)=>{const m=S.meta[r.name],dep=shiftT(r.dep,sh);
+      const o={k:'sta',name:clean(m.name),arr:r.pas?'通過':'',dep:dep,trk:clean(m.trk),memo:clean(m.memo),km:kms[i],lat:m.lat,lng:m.lng,addr:clean(m.addr)};
+      rows.push(o);lines.push([o.name,o.arr,o.dep,o.trk,o.memo,o.km,o.lat,o.lng,o.addr].join(','))})});
+  return{text:lines.join('\n'),rows:rows}}
+function renderOut(){if(!S.trips.length)return;$('#out').value=build().text}
+
+async function geo(i,quiet){const s=S.stops[i],m=S.meta[s],st=$('#st'+i);
+  if(!m.addr){if(st)st.textContent='住所を入力してください';return false}
+  if(st)st.textContent='検索中…';
+  try{const r=await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(m.addr)),j=await r.json(),c=j&&j[0]&&j[0].geometry&&j[0].geometry.coordinates;
+    if(!c){if(st)st.textContent='住所が見つかりません';return false}
+    m.lng=(+c[0]).toFixed(6);m.lat=(+c[1]).toFixed(6);if(st)st.textContent='取得: '+m.lat+', '+m.lng;return true}
+  catch(e){if(st)st.textContent='取得できません（通信できない環境です）';return false}}
+
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-act]');if(!b)return;const a=b.dataset.act,i=+b.dataset.i;
+  if(a==='parse')doParse();
+  else if(a==='sample'){$('#src').value='停留所\t101\t103\t105\t107\n駅前\t6:10\t6:40\t7:10\t7:40\n中央通り\t6:14\t6:44\t7:14\t7:44\n旧街道入口\tレ\tレ\t7:17\t7:47\n踏切前\t6:20\t6:50\t7:20\t7:50\n市民病院\t6:31\t7:01\t7:31\t8:01';$('#mode').value='auto';doParse()}
+  else if(a==='geo'){await geo(i);renderOut()}
+  else if(a==='geoall'){let n=0;for(let k=0;k<S.stops.length;k++){if(S.meta[S.stops[k]].addr&&await geo(k))n++;await new Promise(r=>setTimeout(r,250))}renderOut();toast(n+'件の座標を取得しました')}
+  else if(a==='copy'){const t=$('#out');t.select();let ok=false;try{ok=navigator.clipboard?(await navigator.clipboard.writeText(t.value),true):document.execCommand('copy')}catch(x){try{ok=document.execCommand('copy')}catch(y){}}msg('#omsg',ok?'コピーしました':'コピーできませんでした。テキストを長押しして選択してください',ok)}
+  else if(a==='addapp'){try{const d=JSON.parse(localStorage.getItem(APPKEY));const o=build(),id=Math.random().toString(36).slice(2,9);
+    d.staffs.unshift({id:id,name:clean($('#sname').value)||'新しい運行表',note:'',rows:o.rows.map(r=>r.k==='sta'?Object.assign({},r,{est:false}):r)});
+    const ty=$('#type').value;if(Array.isArray(d.types)&&!d.types.includes(ty))d.types.push(ty);
+    localStorage.setItem(APPKEY,JSON.stringify(d));msg('#omsg','運行表アプリに追加しました。アプリを開いて確認してください',1)}catch(x){msg('#omsg','追加できませんでした',0)}}
+});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset.f){const m=S.meta[S.stops[+t.dataset.i]];m[t.dataset.f]=t.value;renderOut();if(t.dataset.f==='name')renderPrev()}
+  else if(t.id==='shift'||t.id==='dist'||t.id==='type'||t.id==='sname')renderOut()});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='dist'||t.id==='type')renderOut();
+  if(t.dataset.c){const i=+t.dataset.i,m=S.meta[S.stops[i]],v=t.value.trim(),st=$('#st'+i);
+    if(!v){m.lat='';m.lng='';if(st)st.textContent='';renderOut();return}
+    const c=parseCoord(v);if(!c||Math.abs(c[0])>90||Math.abs(c[1])>180){if(st)st.textContent=/goo\.gl|maps\.app/.test(v)?'短縮URLは読み取れません。座標をコピーしてください':'座標を読み取れません';return}
+    m.lat=c[0].toFixed(6);m.lng=c[1].toFixed(6);t.value=m.lat+', '+m.lng;if(st)st.textContent='座標あり';renderOut()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.c&&/^\s*(https?:|<iframe)/.test(t.value)&&parseCoord(t.value))t.dispatchEvent(new Event('change',{bubbles:true}))});
+try{if(localStorage.getItem(APPKEY))$('#addapp').hidden=false}catch(e){}
+})();
+</script>
+</body>
+</html>
