@@ -366,16 +366,16 @@ function fmtMin(m){m=Math.round(m);return String(Math.floor(m/60)).padStart(2,'0
 function fstSet(s){const f=new Set();let nt=true;s.rows.forEach((r,i)=>{if(r.k==='trip')nt=true;else if(r.k==='sta'){if(nt)f.add(i);nt=false}});return f}
 function recalcDur(s){let acc=null;
   s.rows.forEach(r=>{if(r.k==='trip'){acc=null;return}if(r.k!=='sta')return;
-    if(acc==null){const t=tparse(r.dep);if(t!=null)acc=t;return}
-    const d=parseFloat(r.dur);
-    if(!isNaN(d)){acc+=d;r.dep=fmtMin(acc)}else{const t=tparse(r.dep);if(t!=null)acc=t}})}
+    if(acc!=null&&r.tm==='dur'){const d=parseFloat(r.dur);if(!isNaN(d)){acc+=d;r.dep=fmtMin(acc);return}}
+    const t=tparse(r.dep);if(t!=null)acc=t})}
 function durFromTimes(s){let acc=null;
   s.rows.forEach(r=>{if(r.k==='trip'){acc=null;return}if(r.k!=='sta')return;
     const t=tparse(r.dep);if(acc!=null&&t!=null){let d=t-acc;if(d<0)d+=1440;r.dur=String(d)}if(t!=null)acc=t})}
+function durOne(s,i){const t=tparse(s.rows[i].dep);let p=null;for(let k=i-1;k>=0;k--){const q=s.rows[k];if(q.k==='trip')break;if(q.k==='sta'){p=tparse(q.dep);break}}if(t!=null&&p!=null){let d=t-p;if(d<0)d+=1440;s.rows[i].dur=String(d)}}
 //DUR-END
 function refreshTl(s){document.querySelectorAll('[data-tl]').forEach(e=>{const r=s.rows[+e.dataset.tl];if(r)e.textContent='→ '+(r.dep||'--:--')})}
 document.addEventListener('change',e=>{const t=e.target;if(mode!=='edit'||t.dataset.f!=='dep')return;const s=getStaff(),r=s&&s.rows[+t.dataset.i];if(!r)return;
-  const m=tparse(t.value);if(m!=null){r.dep=fmtMin(m);t.value=r.dep;save();if(s.tmode==='dur'){recalcDur(s);save();refreshTl(s)}}});
+  const m=tparse(t.value);if(m!=null){r.dep=fmtMin(m);t.value=r.dep;save();recalcDur(s);save();refreshTl(s)}});
 // ---------- 画面を消さない ----------
 const NSV='data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAM2bW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAmB0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAACAAAAAgAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHYbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABg21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAUNzdGJsAAAAu3N0c2QAAAAAAAAAAQAAAKthdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAACAAIABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMWF2Y0MBQsAe/+EAGGdCwB6mESWwEQAAAwABAAADAAQPFi4RgAEABmjIQgOSyAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAAAqUAAAKlAAAABhzdHRzAAAAAAAAAAEAAAAEAAAgAAAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAAEAAAAAQAAACRzdHN6AAAAAAAAAAAAAAAEAAAChwAAAAoAAAAKAAAACgAAABRzdGNvAAAAAAAAAAEAAANmAAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2MC4xNi4xMDAAAAAIZnJlZQAAAq1tZGF0AAACcgYF//9u3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzEwOCAzMWUxOWY5IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyMyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTE2IGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMzEgbWU9dW1oIHN1Ym1lPTEwIHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MjQgY2hyb21hX21lPTEgdHJlbGxpcz0yIDh4OGRjdD0wIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS0yIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTAgd2VpZ2h0cD0wIGtleWludD0yNTAga2V5aW50X21pbj0yIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NjAgcmM9Y3JmIG1idHJlZT0xIGNyZj00MC4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAADWWIggKeTFAAEge+uvAAAAAGQZocBTywAAAABkGaKgFPLAAAAAZBmjsBLyw=';
 let awk=null,awkV=null;
@@ -401,16 +401,17 @@ function rowEditor(r,i,n,first,tm){
   const inp=(f,l,ph,c)=>`<div class="${c||''}"><label>${l}</label><input data-i="${i}" data-f="${f}" value="${esc(r[f])}" placeholder="${ph||''}"></div>`;
   if(r.k==='trip')return `<div class="rc k-trip"><div class="rh"><span class="tag">便</span>${mv}</div><div class="grid2">${inp('no','便番号','101')}${typeSel(r,i)}${inp('dest','行先・区間','駅前BT→市民病院','full')}</div></div>`;
   if(r.k==='note')return `<div class="rc k-note"><div class="rh"><span class="tag">注記</span>${mv}</div>${inp('text','内容','折返し 6分')}</div>`;
-  return `<div class="rc k-sta"><div class="rh"><span class="tag">停留所</span><button data-act="pass" data-i="${i}" class="${pas?'pri':''}">通過${pas?' ✓':''}</button>${mv}</div><div class="grid2">${inp('name','停留所名','中央通り','full')}${(tm==='dur'&&!first)?`<div><label>前の停留所から（分）</label><input data-i="${i}" data-f="dur" value="${esc(r.dur)}" inputmode="decimal" placeholder="4"><div class="hint" data-tl="${i}" style="margin:2px 0 0">→ ${esc(r.dep||'--:--')}</div></div>`:inp('dep',tm==='dur'?'始発の発時刻':'発','06:19')}${inp('trk','のりば','2')}${inp('km','距離(km)','1.2')}${inp('memo','注意事項（⚠で赤帯表示）','⚠ 狭隘路 20km/h','full')}<div class="full"><label>住所（座標の自動取得・地図検索用）</label><input data-i="${i}" data-f="addr" value="${esc(r.addr)}" placeholder="東京都千代田区丸の内1-9-1"></div><div class="full"><label>座標（緯度, 経度）</label><input data-c="${i}" value="${r.lat?esc(r.lat+', '+r.lng):''}" placeholder="35.68123, 139.76712 または地図のURL"></div><div class="full btns"><button data-act="geo" data-i="${i}">📍 現在地</button><button data-act="mappick" data-i="${i}">🗺 アプリ内の地図で選ぶ</button><button data-act="est" data-i="${i}">🏠 住所から座標取得</button><a class="lk" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr||(r.lat?r.lat+','+r.lng:(r.name||'')))}" target="_blank" rel="noopener">🗺 Googleマップ</a></div>${r.est?'<div class="full hint">住所検索（国土地理院）で取得した位置です。実際の停留所位置と異なる場合は、地図で確認して座標欄に貼り直してください。</div>':''}<div class="full hint">地図アプリで地点を長押し→表示された座標をコピー→上の欄に貼り付けてください。</div></div></div>`;
+  return `<div class="rc k-sta"><div class="rh"><span class="tag">停留所</span><button data-act="pass" data-i="${i}" class="${pas?'pri':''}">通過${pas?' ✓':''}</button>${first?'':`<button data-act="rtm" data-i="${i}" class="${r.tm==='dur'?'pri':''}">${r.tm==='dur'?'⏱ 所要時間':'🕐 直接'}</button>`}${mv}</div><div class="grid2">${inp('name','停留所名','中央通り','full')}${(r.tm==='dur'&&!first)?`<div><label>前の停留所から（分）</label><input data-i="${i}" data-f="dur" value="${esc(r.dur)}" inputmode="decimal" placeholder="4"><div class="hint" data-tl="${i}" style="margin:2px 0 0">→ ${esc(r.dep||'--:--')}</div></div>`:inp('dep',first?'発（始発）':'発','06:19')}${inp('trk','のりば','2')}${inp('km','距離(km)','1.2')}${inp('memo','注意事項（⚠で赤帯表示）','⚠ 狭隘路 20km/h','full')}<div class="full"><label>住所（座標の自動取得・地図検索用）</label><input data-i="${i}" data-f="addr" value="${esc(r.addr)}" placeholder="東京都千代田区丸の内1-9-1"></div><div class="full"><label>座標（緯度, 経度）</label><input data-c="${i}" value="${r.lat?esc(r.lat+', '+r.lng):''}" placeholder="35.68123, 139.76712 または地図のURL"></div><div class="full btns"><button data-act="geo" data-i="${i}">📍 現在地</button><button data-act="mappick" data-i="${i}">🗺 アプリ内の地図で選ぶ</button><button data-act="est" data-i="${i}">🏠 住所から座標取得</button><a class="lk" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr||(r.lat?r.lat+','+r.lng:(r.name||'')))}" target="_blank" rel="noopener">🗺 Googleマップ</a></div>${r.est?'<div class="full hint">住所検索（国土地理院）で取得した位置です。実際の停留所位置と異なる場合は、地図で確認して座標欄に貼り直してください。</div>':''}<div class="full hint">地図アプリで地点を長押し→表示された座標をコピー→上の欄に貼り付けてください。</div></div></div>`;
 }
 function renderEdit(){
   const s=getStaff();if(!s){mode='list';render();return}
-  if(s.tmode==='dur'){recalcDur(s);save()}
+  if(s.tmode){if(s.tmode==='dur'){const f0=fstSet(s);s.rows.forEach((r,k)=>{if(r.k==='sta'&&!f0.has(k))r.tm='dur'})}delete s.tmode;save()}
+  if(s.rows.some(r=>r.tm==='dur')){recalcDur(s);save()}
   $('#app').innerHTML=`<div class="bar"><h1>運行表を編集</h1><button data-act="back">一覧</button><button class="pri" data-act="open" data-id="${s.id}">開く</button></div>
   <div class="field"><label>運行表名（運番など）</label><input data-s="name" value="${esc(s.name)}"></div>
   <div class="field"><label>メモ</label><input data-s="note" value="${esc(s.note)}"></div>
-  <div class="field"><label>時刻の入力方法</label><div class="btns" style="margin:0"><button data-act="tmode" data-v="direct" class="${s.tmode==='dur'?'':'pri'}">直接入力（各停留所の発時刻）</button><button data-act="tmode" data-v="dur" class="${s.tmode==='dur'?'pri':''}">所要時間入力（始発＋前から○分）</button></div>${s.tmode==='dur'?'<div class="hint">各便の最初の停留所だけ発時刻を入力し、以降は前の停留所からの所要時間（分）を入力します。時刻は自動で計算されます。</div>':''}</div>
-  <div>${s.rows.map((r,i)=>rowEditor(r,i,s.rows.length,fstSet(s).has(i),s.tmode)).join('')}</div>
+  <div class="field"><label>時刻の入力方法（停留所ごとに切り替えられます）</label><div class="btns" style="margin:0"><button data-act="tmode" data-v="direct">すべて直接入力にする</button><button data-act="tmode" data-v="dur">すべて所要時間入力にする</button></div><div class="hint">各停留所のカードにある「🕐 直接／⏱ 所要時間」ボタンで、その停留所だけ入力方法を切り替えられます。所要時間は前の停留所からの分数で、時刻は自動計算されます。</div></div>
+  <div>${s.rows.map((r,i)=>rowEditor(r,i,s.rows.length,fstSet(s).has(i))).join('')}</div>
   <div class="addbar"><button data-act="addsta">＋停留所</button><button data-act="addtrip">＋便</button><button data-act="addnote">＋注記</button></div>
   <details><summary>テキスト入出力（まとめて入力・バックアップ）</summary>
   <div class="hint">1行1項目。<code>#</code>で便（<code>#101,普通,駅前→病院</code>）、<code>!</code>で注記、他は停留所（<code>名称,着,発,のりば,注意,距離</code>）。</div>
@@ -465,7 +466,8 @@ document.addEventListener('click',e=>{
   else if(a==='dnext'){dstep(s)}
   else if(a==='bkexp'){try{const bl=new Blob([JSON.stringify(data)],{type:'application/json'}),u=URL.createObjectURL(bl),k=document.createElement('a'),d=new Date();k.href=u;k.download='bus-staff-backup-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';document.body.appendChild(k);k.click();k.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(er){toast('保存に失敗しました')}}
   else if(a==='bkimp'){$('#bkf').click()}
-  else if(a==='tmode'){const v=b.dataset.v;if(v==='dur'&&s.tmode!=='dur'){durFromTimes(s);s.tmode='dur'}else if(v==='direct'){s.tmode='direct'}save();renderEdit()}
+  else if(a==='tmode'){const v=b.dataset.v,f=fstSet(s);if(v==='dur')durFromTimes(s);s.rows.forEach((r,k)=>{if(r.k==='sta')r.tm=(v==='dur'&&!f.has(k))?'dur':'direct'});save();renderEdit()}
+  else if(a==='rtm'){const r=s.rows[i];if(r.tm==='dur'){r.tm='direct'}else{r.tm='dur';durOne(s,i)}save();renderEdit()}
   else if(a==='awake'){if(data.awake){data.awake=false;awakeOff();save();toast('画面を消さない: オフ');refreshMode()}else{awakeOn().then(ok=>{if(ok){data.awake=true;save();toast('画面を消さない: オン')}else toast('この端末では使えません');refreshMode()})}}
   else if(a==='simp'){openSim()}
   else if(a==='simx'){closeSim()}
@@ -497,7 +499,7 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{
   const t=e.target,s=getStaff();if(!s||mode!=='edit')return;
   if(t.dataset.s){s[t.dataset.s]=t.value;save()}
-  else if(t.dataset.f){s.rows[+t.dataset.i][t.dataset.f]=t.value;save();if(s.tmode==='dur'&&(t.dataset.f==='dur'||t.dataset.f==='dep')){recalcDur(s);save();refreshTl(s)}}
+  else if(t.dataset.f){s.rows[+t.dataset.i][t.dataset.f]=t.value;save();if(t.dataset.f==='dur'||t.dataset.f==='dep'){recalcDur(s);save();refreshTl(s)}}
 });
 function setInsets(){const sa=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;const p=document.createElement('div');p.style.cssText='position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const cs=getComputedStyle(p),t=parseFloat(cs.paddingTop)||0,b=parseFloat(cs.paddingBottom)||0;p.remove();const r=document.documentElement.style;r.setProperty('--sat',(sa?Math.max(t,59)+24:t)+'px');r.setProperty('--sab',(sa?Math.max(b,20):b)+'px')}
 setInsets();window.addEventListener('resize',setInsets);
