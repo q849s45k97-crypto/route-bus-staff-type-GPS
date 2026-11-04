@@ -86,7 +86,7 @@ details{background:var(--card);border:1px solid var(--line);border-radius:6px;pa
 summary{cursor:pointer;font-weight:700}
 .hint{font-size:13px;color:var(--sub);margin:6px 0}
 .hint code{background:var(--bg);padding:0 4px;border-radius:3px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;z-index:20}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;z-index:70}
 .dvw{position:fixed;inset:0;z-index:30;container-type:size;background:#26262a}
 .dv{width:100%;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 26%;grid-template-rows:minmax(0,1fr) auto;gap:1.5cqh;padding:1.5cqh;color:#111}
 @media (orientation:landscape){.dv{padding:max(1.5cqh,env(safe-area-inset-top)) max(1.5cqh,env(safe-area-inset-right)) max(1.5cqh,env(safe-area-inset-bottom)) max(1.5cqh,env(safe-area-inset-left))}}
@@ -109,7 +109,7 @@ summary{cursor:pointer;font-weight:700}
 .dclk{font-size:12cqh;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
 .dbox{flex:1;border-top:.4cqh solid #fff;text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:0 .5cqh}
 .dbox small{font-size:4.2cqh;font-weight:700}.dbox b{font-size:8cqh;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dkeys{grid-column:1/-1;display:grid;grid-template-columns:repeat(8,1fr);gap:1.5cqh}
+.dkeys{grid-column:1/-1;display:grid;grid-template-columns:repeat(8,1fr) .7fr;gap:1.5cqh}
 .dkeys button{background:#3d3d42;color:#fff;border:0;border-bottom:.6cqh solid #111;border-radius:1cqh;min-height:11cqh;font-size:4.6cqh;font-weight:700;padding:0}
 .dkeys button.on{background:#ffd23f;color:#111}
 .dly{font-size:.62em;font-weight:800;margin-left:.6em;color:#d32f2f}.dly.early{color:#1565c0}.dr.cur .dly{color:#ff8a80}.dr.cur .dly.early{color:#8ab4ff}.dly.run{opacity:.85}.dly.ok{color:#2e7d32}.dr.cur .dly.ok{color:#8bd48e}
@@ -179,7 +179,7 @@ function renderList(){
     <button data-act="edit" data-id="${s.id}">編集</button><button data-act="dup" data-id="${s.id}">複製</button>
     <button class="dng ${arm===s.id?'arm':''}" data-act="del" data-id="${s.id}">${arm===s.id?'もう一度タップで削除':'削除'}</button></div></div>`}).join('');
   $('#app').innerHTML=`<div class="bar"><h1>運行表（バス版）</h1><button class="pri" data-act="new">新しい運行表</button></div>
-  <div class="bar"><button data-act="types">区分を編集</button><button data-act="bkexp">バックアップ保存</button><button data-act="bkimp">バックアップ読込</button><input type="file" id="bkf" accept="application/json,.json" hidden></div>
+  <div class="bar"><button data-act="types">区分を編集</button><button data-act="bkexp">バックアップ保存</button><button data-act="bkimp">バックアップ読込</button><button data-act="awake" class="${data.awake?'pri':''}">☀ 画面を消さない: ${data.awake?'オン':'オフ'}</button><input type="file" id="bkf" accept="application/json,.json" hidden></div>
   ${items||'<div class="empty">運行表がありません。</div>'}
   <div class="hint">データはこの端末のブラウザ内に保存されます。端末を変える場合は、編集画面の「テキスト入出力」で書き出してください。</div>`;
 }
@@ -210,7 +210,7 @@ function renderView(){
   });
   $('#app').innerHTML=`<div class="vhead"><div class="vtitle"><h1>${esc(s.name)}</h1><span class="clock" id="clk">--:--:--</span></div>
   <div class="tools"><button data-act="back">一覧</button>${pg>0?'<button data-act="prev">前の便</button>':''}<span class="pg">${segs.length?pg+1:0}/${segs.length}</span>
-  <button class="pri" data-act="dash">車載表示</button><button data-act="edit" data-id="${s.id}">編集</button><button data-act="fsm">A−</button><button data-act="fsp">A＋</button><button data-act="theme">明暗</button></div></div>
+  <button class="pri" data-act="dash">車載表示</button><button data-act="edit" data-id="${s.id}">編集</button><button data-act="fsm">A−</button><button data-act="fsp">A＋</button><button data-act="awake" class="${data.awake?'pri':''}">☀${data.awake?'オン':'オフ'}</button><button data-act="theme">明暗</button></div></div>
   <div class="staff" style="--fs:${data.fs||1}">${segs[pg]&&s.rows[segs[pg][0]].k!=='trip'?hd:''}${h||'<div class="noterow">行がありません。編集から追加してください。</div>'}</div>
   ${nx?`<button class="pri nextbtn" data-act="next">${esc(nl)}の時刻表へ</button>`:''}`;
   tick();
@@ -235,10 +235,9 @@ function renderDash0(){
   const lgx=dlog[pgKey(s)]||{};
   const nw=new Date(toff==null?VN():VN()-toff*60000),nmin=nw.getHours()*60+nw.getMinutes()+nw.getSeconds()/60;
   const dly=j=>{let v=lgx[j],run='';
-    if(v==null&&gpsOn){let k=-1;for(const x in lgx)if(+x<j&&+x>k)k=+x;if(k>=0){v=lgx[k];run=' run'}
-      if(j===ci&&st[j]){const sc=tmin(/\d/.test(st[j].dep||'')?st[j].dep:st[j].arr);if(sc!=null){let df=nmin-sc;if(df<-720)df+=1440;if(df>720)df-=1440;const lv=Math.floor(df);if(lv>0&&lv>(v||0)){v=lv;run=' run'}}}}
+    if(v==null&&gpsOn&&j>=ci&&st[j]){const sc=tmin(/\d/.test(st[j].dep||'')?st[j].dep:st[j].arr);if(sc!=null){let df=nmin-sc;if(df<-720)df+=1440;if(df>720)df-=1440;const lv=Math.floor(df);if(lv>0){v=lv;run=' run'}}}
     if(v==null)return'';
-    if(v===0)return run?'':"<b class='dly ok'>定刻</b>";
+    if(v===0)return "<b class='dly ok'>定刻</b>";
     return `<b class='dly${v<0?' early':''}${run}'>${v>0?'+':'−'}${Math.abs(v)}分</b>`};
   const row=(r,c,j)=>r?`<div class='dr ${c}'><span>↓${esc(r.name)}</span><span>${esc(dlabel(r))}${dly(j)}</span></div>`:`<div class='dr ${c} e'><span>.</span></div>`;
   const c=st[ci];
@@ -247,7 +246,7 @@ function renderDash0(){
   $('#app').innerHTML=`<div class='dvw'><div class='dv'><div class='dmain'><div class='dzn' data-zone='next'></div><div class='dtab'>ダイヤ運行　${esc(s.name)}${gpsMsg?'　'+esc(gpsMsg):''}${toff!=null?'　【試験】':''}</div><div class='dtrip'>${trip?esc(trip.no)+'　'+esc(trip.dest):'—'}</div><div class='dlist' id='dlist'>${st.length?st.map((r,j)=>j===ci?cur:row(r,'dim',j)).join(''):cur}</div></div>
   <div class='dside'><div class='dtop'><div class='dd'>${now.getMonth()+1}月${now.getDate()}日<br>(${'日月火水木金土'[now.getDay()]})</div><div class='dclk' id='dclk'>${p2(now.getHours())}:${p2(now.getMinutes())}</div></div>
   <div class='dbox'><small>便</small><b>${trip&&trip.no?esc(trip.no):'-'}</b></div><div class='dbox'><small>区分</small><b>${trip&&trip.type?esc(trip.type):'-'}</b></div><div class='dbox'><small>停留所</small><b>${st.length?ci+1+'/'+st.length:'-'}</b></div></div>
-  <div class='dkeys'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button><button data-act='simp' class='${sim?'on':''}'>試験</button></div></div></div>`;
+  <div class='dkeys'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button><button data-act='simp' class='${sim?'on':''}'>試験</button><button data-act='awake' class='${data.awake?'on':''}'>☀</button></div></div></div>`;
 }
 function curStops(s){const g=segsOf(s);data.pg=data.pg||{};const pg=Math.max(0,Math.min(data.pg[s.id]||0,g.length-1));return (g[pg]||[]).map(i=>s.rows[i]).filter(r=>r.k==='sta')}
 function autoIdx(st){const d=new Date(),nm=d.getHours()*60+d.getMinutes(),ts=st.map(r=>tmin(/\d/.test(r.dep||'')?r.dep:r.arr));if(!ts.some(t=>t!=null))return null;const f=ts.findIndex(t=>t!=null&&t>=nm);return f>=0?f:st.length-1}
@@ -361,6 +360,32 @@ function simTick(){if(!sim)return;const n=Date.now();sim.t+=(n-sim.last)*simSp;s
   if(d.getMinutes()!==lastMin&&mode==='dash')renderDash();
   simMsg('仮想時刻 '+pd(d.getHours())+':'+pd(d.getMinutes())+':'+pd(d.getSeconds())+'　速度×'+simSp+'　遅れ'+(simDl>0?'+':'')+simDl+'分');
   if(sim&&sim.t>sim.endT){gpsStop();gpsMsg='';renderDash();simPanel();simMsg('試験走行が終わりました')}}
+//DUR-START
+function tparse(v){const m=/^\s*(\d{1,2})\s*[:：.．時]?\s*(\d{2})\s*$/.exec(v||'');return m&&+m[2]<60?+m[1]*60+ +m[2]:null}
+function fmtMin(m){m=Math.round(m);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function fstSet(s){const f=new Set();let nt=true;s.rows.forEach((r,i)=>{if(r.k==='trip')nt=true;else if(r.k==='sta'){if(nt)f.add(i);nt=false}});return f}
+function recalcDur(s){let acc=null;
+  s.rows.forEach(r=>{if(r.k==='trip'){acc=null;return}if(r.k!=='sta')return;
+    if(acc==null){const t=tparse(r.dep);if(t!=null)acc=t;return}
+    const d=parseFloat(r.dur);
+    if(!isNaN(d)){acc+=d;r.dep=fmtMin(acc)}else{const t=tparse(r.dep);if(t!=null)acc=t}})}
+function durFromTimes(s){let acc=null;
+  s.rows.forEach(r=>{if(r.k==='trip'){acc=null;return}if(r.k!=='sta')return;
+    const t=tparse(r.dep);if(acc!=null&&t!=null){let d=t-acc;if(d<0)d+=1440;r.dur=String(d)}if(t!=null)acc=t})}
+//DUR-END
+function refreshTl(s){document.querySelectorAll('[data-tl]').forEach(e=>{const r=s.rows[+e.dataset.tl];if(r)e.textContent='→ '+(r.dep||'--:--')})}
+document.addEventListener('change',e=>{const t=e.target;if(mode!=='edit'||t.dataset.f!=='dep')return;const s=getStaff(),r=s&&s.rows[+t.dataset.i];if(!r)return;
+  const m=tparse(t.value);if(m!=null){r.dep=fmtMin(m);t.value=r.dep;save();if(s.tmode==='dur'){recalcDur(s);save();refreshTl(s)}}});
+// ---------- 画面を消さない ----------
+const NSV='data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAM2bW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAmB0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAACAAAAAgAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHYbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABg21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAUNzdGJsAAAAu3N0c2QAAAAAAAAAAQAAAKthdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAACAAIABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMWF2Y0MBQsAe/+EAGGdCwB6mESWwEQAAAwABAAADAAQPFi4RgAEABmjIQgOSyAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAAAqUAAAKlAAAABhzdHRzAAAAAAAAAAEAAAAEAAAgAAAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAAEAAAAAQAAACRzdHN6AAAAAAAAAAAAAAAEAAAChwAAAAoAAAAKAAAACgAAABRzdGNvAAAAAAAAAAEAAANmAAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2MC4xNi4xMDAAAAAIZnJlZQAAAq1tZGF0AAACcgYF//9u3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzEwOCAzMWUxOWY5IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyMyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTE2IGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMzEgbWU9dW1oIHN1Ym1lPTEwIHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MjQgY2hyb21hX21lPTEgdHJlbGxpcz0yIDh4OGRjdD0wIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS0yIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTAgd2VpZ2h0cD0wIGtleWludD0yNTAga2V5aW50X21pbj0yIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NjAgcmM9Y3JmIG1idHJlZT0xIGNyZj00MC4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAADWWIggKeTFAAEge+uvAAAAAGQZocBTywAAAABkGaKgFPLAAAAAZBmjsBLyw=';
+let awk=null,awkV=null;
+async function awakeOn(){if(awk||awkV)return true;
+  try{if(navigator.wakeLock){awk=await navigator.wakeLock.request('screen');awk.addEventListener('release',()=>{awk=null});return true}}catch(e){awk=null}
+  try{const v=document.createElement('video');v.setAttribute('playsinline','');v.muted=true;v.loop=true;v.src=NSV;v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';document.body.appendChild(v);await v.play();awkV=v;return true}catch(e){return false}}
+function awakeOff(){try{awk&&awk.release()}catch(e){}awk=null;if(awkV){try{awkV.pause()}catch(e){}awkV.remove();awkV=null}}
+function refreshMode(){if(mode==='dash')renderDash();else render()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&data.awake){if(awkV)awkV.play().catch(()=>{});else awakeOn()}});
+document.addEventListener('click',()=>{if(data.awake&&!awk&&!awkV)awakeOn()},true);
 function dashTick(){const d=new Date(VN()),c=$('#dclk');if(c)c.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.getMinutes()!==lastMin&&mode==='dash')renderDash()}
 function renderTypes(){
   $('#app').innerHTML=`<div class="bar"><h1>区分の編集</h1><button class="pri" data-act="back">完了</button></div>
@@ -370,20 +395,22 @@ function renderTypes(){
 }
 function typeSel(r,i){const l=data.types.filter(Boolean);if(r.type&&!l.includes(r.type))l.push(r.type);
   return `<div><label>区分</label><select data-i="${i}" data-f="type"><option value=""></option>${l.map(t=>`<option value="${esc(t)}"${t===r.type?' selected':''}>${esc(t)}</option>`).join('')}</select></div>`}
-function rowEditor(r,i,n){
+function rowEditor(r,i,n,first,tm){
   const pas=PASS.test(r.arr||'');
   const mv=`<button data-act="up" data-i="${i}" ${i===0?'disabled':''}>↑</button><button data-act="dn" data-i="${i}" ${i===n-1?'disabled':''}>↓</button><button class="dng" data-act="rdel" data-i="${i}">✕</button>`;
   const inp=(f,l,ph,c)=>`<div class="${c||''}"><label>${l}</label><input data-i="${i}" data-f="${f}" value="${esc(r[f])}" placeholder="${ph||''}"></div>`;
   if(r.k==='trip')return `<div class="rc k-trip"><div class="rh"><span class="tag">便</span>${mv}</div><div class="grid2">${inp('no','便番号','101')}${typeSel(r,i)}${inp('dest','行先・区間','駅前BT→市民病院','full')}</div></div>`;
   if(r.k==='note')return `<div class="rc k-note"><div class="rh"><span class="tag">注記</span>${mv}</div>${inp('text','内容','折返し 6分')}</div>`;
-  return `<div class="rc k-sta"><div class="rh"><span class="tag">停留所</span><button data-act="pass" data-i="${i}" class="${pas?'pri':''}">通過${pas?' ✓':''}</button>${mv}</div><div class="grid2">${inp('name','停留所名','中央通り','full')}${inp('dep','発','06:19')}${inp('trk','のりば','2')}${inp('km','距離(km)','1.2')}${inp('memo','注意事項（⚠で赤帯表示）','⚠ 狭隘路 20km/h','full')}<div class="full"><label>住所（座標の自動取得・地図検索用）</label><input data-f="addr" value="${esc(r.addr)}" placeholder="東京都千代田区丸の内1-9-1"></div><div class="full"><label>座標（緯度, 経度）</label><input data-c="${i}" value="${r.lat?esc(r.lat+', '+r.lng):''}" placeholder="35.68123, 139.76712 または地図のURL"></div><div class="full btns"><button data-act="geo" data-i="${i}">📍 現在地</button><button data-act="mappick" data-i="${i}">🗺 アプリ内の地図で選ぶ</button><button data-act="est" data-i="${i}">🏠 住所から座標取得</button><a class="lk" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr||(r.lat?r.lat+','+r.lng:(r.name||'')))}" target="_blank" rel="noopener">🗺 Googleマップ</a></div>${r.est?'<div class="full hint">住所検索（国土地理院）で取得した位置です。実際の停留所位置と異なる場合は、地図で確認して座標欄に貼り直してください。</div>':''}<div class="full hint">地図アプリで地点を長押し→表示された座標をコピー→上の欄に貼り付けてください。</div></div></div>`;
+  return `<div class="rc k-sta"><div class="rh"><span class="tag">停留所</span><button data-act="pass" data-i="${i}" class="${pas?'pri':''}">通過${pas?' ✓':''}</button>${mv}</div><div class="grid2">${inp('name','停留所名','中央通り','full')}${(tm==='dur'&&!first)?`<div><label>前の停留所から（分）</label><input data-i="${i}" data-f="dur" value="${esc(r.dur)}" inputmode="decimal" placeholder="4"><div class="hint" data-tl="${i}" style="margin:2px 0 0">→ ${esc(r.dep||'--:--')}</div></div>`:inp('dep',tm==='dur'?'始発の発時刻':'発','06:19')}${inp('trk','のりば','2')}${inp('km','距離(km)','1.2')}${inp('memo','注意事項（⚠で赤帯表示）','⚠ 狭隘路 20km/h','full')}<div class="full"><label>住所（座標の自動取得・地図検索用）</label><input data-i="${i}" data-f="addr" value="${esc(r.addr)}" placeholder="東京都千代田区丸の内1-9-1"></div><div class="full"><label>座標（緯度, 経度）</label><input data-c="${i}" value="${r.lat?esc(r.lat+', '+r.lng):''}" placeholder="35.68123, 139.76712 または地図のURL"></div><div class="full btns"><button data-act="geo" data-i="${i}">📍 現在地</button><button data-act="mappick" data-i="${i}">🗺 アプリ内の地図で選ぶ</button><button data-act="est" data-i="${i}">🏠 住所から座標取得</button><a class="lk" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr||(r.lat?r.lat+','+r.lng:(r.name||'')))}" target="_blank" rel="noopener">🗺 Googleマップ</a></div>${r.est?'<div class="full hint">住所検索（国土地理院）で取得した位置です。実際の停留所位置と異なる場合は、地図で確認して座標欄に貼り直してください。</div>':''}<div class="full hint">地図アプリで地点を長押し→表示された座標をコピー→上の欄に貼り付けてください。</div></div></div>`;
 }
 function renderEdit(){
   const s=getStaff();if(!s){mode='list';render();return}
+  if(s.tmode==='dur'){recalcDur(s);save()}
   $('#app').innerHTML=`<div class="bar"><h1>運行表を編集</h1><button data-act="back">一覧</button><button class="pri" data-act="open" data-id="${s.id}">開く</button></div>
   <div class="field"><label>運行表名（運番など）</label><input data-s="name" value="${esc(s.name)}"></div>
   <div class="field"><label>メモ</label><input data-s="note" value="${esc(s.note)}"></div>
-  <div>${s.rows.map((r,i)=>rowEditor(r,i,s.rows.length)).join('')}</div>
+  <div class="field"><label>時刻の入力方法</label><div class="btns" style="margin:0"><button data-act="tmode" data-v="direct" class="${s.tmode==='dur'?'':'pri'}">直接入力（各停留所の発時刻）</button><button data-act="tmode" data-v="dur" class="${s.tmode==='dur'?'pri':''}">所要時間入力（始発＋前から○分）</button></div>${s.tmode==='dur'?'<div class="hint">各便の最初の停留所だけ発時刻を入力し、以降は前の停留所からの所要時間（分）を入力します。時刻は自動で計算されます。</div>':''}</div>
+  <div>${s.rows.map((r,i)=>rowEditor(r,i,s.rows.length,fstSet(s).has(i),s.tmode)).join('')}</div>
   <div class="addbar"><button data-act="addsta">＋停留所</button><button data-act="addtrip">＋便</button><button data-act="addnote">＋注記</button></div>
   <details><summary>テキスト入出力（まとめて入力・バックアップ）</summary>
   <div class="hint">1行1項目。<code>#</code>で便（<code>#101,普通,駅前→病院</code>）、<code>!</code>で注記、他は停留所（<code>名称,着,発,のりば,注意,距離</code>）。</div>
@@ -438,6 +465,8 @@ document.addEventListener('click',e=>{
   else if(a==='dnext'){dstep(s)}
   else if(a==='bkexp'){try{const bl=new Blob([JSON.stringify(data)],{type:'application/json'}),u=URL.createObjectURL(bl),k=document.createElement('a'),d=new Date();k.href=u;k.download='bus-staff-backup-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';document.body.appendChild(k);k.click();k.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(er){toast('保存に失敗しました')}}
   else if(a==='bkimp'){$('#bkf').click()}
+  else if(a==='tmode'){const v=b.dataset.v;if(v==='dur'&&s.tmode!=='dur'){durFromTimes(s);s.tmode='dur'}else if(v==='direct'){s.tmode='direct'}save();renderEdit()}
+  else if(a==='awake'){if(data.awake){data.awake=false;awakeOff();save();toast('画面を消さない: オフ');refreshMode()}else{awakeOn().then(ok=>{if(ok){data.awake=true;save();toast('画面を消さない: オン')}else toast('この端末では使えません');refreshMode()})}}
   else if(a==='simp'){openSim()}
   else if(a==='simx'){closeSim()}
   else if(a==='simsp'){simSp=+b.dataset.v;simPanel()}
@@ -468,11 +497,12 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{
   const t=e.target,s=getStaff();if(!s||mode!=='edit')return;
   if(t.dataset.s){s[t.dataset.s]=t.value;save()}
-  else if(t.dataset.f){s.rows[+t.dataset.i][t.dataset.f]=t.value;save()}
+  else if(t.dataset.f){s.rows[+t.dataset.i][t.dataset.f]=t.value;save();if(s.tmode==='dur'&&(t.dataset.f==='dur'||t.dataset.f==='dep')){recalcDur(s);save();refreshTl(s)}}
 });
 function setInsets(){const sa=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;const p=document.createElement('div');p.style.cssText='position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const cs=getComputedStyle(p),t=parseFloat(cs.paddingTop)||0,b=parseFloat(cs.paddingBottom)||0;p.remove();const r=document.documentElement.style;r.setProperty('--sat',(sa?Math.max(t,59)+24:t)+'px');r.setProperty('--sab',(sa?Math.max(b,20):b)+'px')}
 setInsets();window.addEventListener('resize',setInsets);
 render();
+if(data.awake)awakeOn();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 })();
 </script>
