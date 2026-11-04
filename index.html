@@ -90,7 +90,7 @@ summary{cursor:pointer;font-weight:700}
 .dvw{position:fixed;inset:0;z-index:30;container-type:size;background:#26262a}
 .dv{width:100%;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 26%;grid-template-rows:minmax(0,1fr) auto;gap:1.5cqh;padding:1.5cqh;color:#111}
 @media (orientation:landscape){.dv{padding:max(1.5cqh,env(safe-area-inset-top)) max(1.5cqh,env(safe-area-inset-right)) max(1.5cqh,env(safe-area-inset-bottom)) max(1.5cqh,env(safe-area-inset-left))}}
-@media (orientation:portrait){.dvw,.simw{inset:auto;top:0;left:100dvw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg)}.dv{padding-left:max(1.5cqh,env(safe-area-inset-top,0px),var(--sat,0px));padding-right:max(1.5cqh,env(safe-area-inset-bottom,0px),var(--sab,0px))}}
+@media (orientation:portrait){.dvw,.simw{inset:auto;top:0;left:100dvw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg)}.dv{padding-left:max(1.5cqh,env(safe-area-inset-top,0px),var(--sat,0px));padding-right:max(1.2cqh,8px)}}
 .dmain{background:#d4d4d6;border-radius:1cqh;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .dtab{background:#5560a0;color:#fff;font-size:5cqh;padding:.6cqh 2.5cqh;border-radius:1cqh 3cqh 0 0;align-self:flex-start;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dtrip{font-size:5.4cqh;padding:1cqh 2.5cqh 0;color:#333;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -179,7 +179,7 @@ function renderList(){
     <button data-act="edit" data-id="${s.id}">編集</button><button data-act="dup" data-id="${s.id}">複製</button>
     <button class="dng ${arm===s.id?'arm':''}" data-act="del" data-id="${s.id}">${arm===s.id?'もう一度タップで削除':'削除'}</button></div></div>`}).join('');
   $('#app').innerHTML=`<div class="bar"><h1>運行表（バス版）</h1><button class="pri" data-act="new">新しい運行表</button></div>
-  <div class="bar"><button data-act="types">区分を編集</button><button data-act="bkexp">バックアップ保存</button><button data-act="bkimp">バックアップ読込</button><button data-act="awake" class="${data.awake?'pri':''}">☀ 画面を消さない: ${data.awake?'オン':'オフ'}</button><input type="file" id="bkf" accept="application/json,.json" hidden></div>
+  <div class="bar"><button data-act="types">区分を編集</button><button data-act="bkexp">バックアップ保存</button><button data-act="bkimp">バックアップ読込</button><button data-act="awake" class="${data.awake?'pri':''}">☀ 画面を消さない: ${data.awake?'オン':'オフ'}</button><button data-act="settings">⚙ 設定</button><input type="file" id="bkf" accept="application/json,.json" hidden></div>
   ${items||'<div class="empty">運行表がありません。</div>'}
   <div class="hint">データはこの端末のブラウザ内に保存されます。端末を変える場合は、編集画面の「テキスト入出力」で書き出してください。</div>`;
 }
@@ -246,11 +246,11 @@ function renderDash0(){
   $('#app').innerHTML=`<div class='dvw'><div class='dv'><div class='dmain'><div class='dzn' data-zone='next'></div><div class='dtab'>ダイヤ運行　${esc(s.name)}${gpsMsg?'　'+esc(gpsMsg):''}${toff!=null?'　【試験】':''}</div><div class='dtrip'>${trip?esc(trip.no)+'　'+esc(trip.dest):'—'}</div><div class='dlist' id='dlist'>${st.length?st.map((r,j)=>j===ci?cur:row(r,'dim',j)).join(''):cur}</div></div>
   <div class='dside'><div class='dtop'><div class='dd'>${now.getMonth()+1}月${now.getDate()}日<br>(${'日月火水木金土'[now.getDay()]})</div><div class='dclk' id='dclk'>${p2(now.getHours())}:${p2(now.getMinutes())}</div></div>
   <div class='dbox'><small>便</small><b>${trip&&trip.no?esc(trip.no):'-'}</b></div><div class='dbox'><small>区分</small><b>${trip&&trip.type?esc(trip.type):'-'}</b></div><div class='dbox'><small>停留所</small><b>${st.length?ci+1+'/'+st.length:'-'}</b></div></div>
-  <div class='dkeys'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button><button data-act='simp' class='${sim?'on':''}'>試験</button><button data-act='awake' class='${data.awake?'on':''}'>☀</button></div></div></div>`;
+  <div class='dkeys' style='grid-template-columns:repeat(${data.testMode?8:7},1fr) .7fr'><button data-act='dview'>表</button><button data-act='dprev'>◀前</button><button data-act='dnext'>次▶</button><button data-act='dauto' class='${auto?'on':''}'>自動</button><button data-act='dtp'>前便</button><button data-act='dtn'>次便</button><button data-act='dgps' class='${gpsOn?'on':''}'>GPS</button>${data.testMode?`<button data-act='simp' class='${sim?'on':''}'>試験</button>`:''}<button data-act='awake' class='${data.awake?'on':''}'>☀</button></div></div></div>`;
 }
 function curStops(s){const g=segsOf(s);data.pg=data.pg||{};const pg=Math.max(0,Math.min(data.pg[s.id]||0,g.length-1));return (g[pg]||[]).map(i=>s.rows[i]).filter(r=>r.k==='sta')}
 function autoIdx(st){const d=new Date(),nm=d.getHours()*60+d.getMinutes(),ts=st.map(r=>tmin(/\d/.test(r.dep||'')?r.dep:r.arr));if(!ts.some(t=>t!=null))return null;const f=ts.findIndex(t=>t!=null&&t>=nm);return f>=0?f:st.length-1}
-function dstep(s){const st=curStops(s),ai=autoIdx(st),n=Math.min(st.length-1,dlast[0]+1);dix[s.id]=(!gpsOn&&ai!=null&&n>=ai)?null:n;renderDash()}
+function dstep(s){const st=curStops(s),ai=autoIdx(st),n=Math.min(st.length-1,dlast[0]+1);dix[s.id]=(!gpsOn&&ai!=null&&dlast[0]<ai&&n>=ai)?null:n;renderDash()}
 let dto=null,ign=0;
 function dscroll(smooth){const l=$('#dlist');if(!l)return;const c=l.querySelector('.cur');if(!c)return;const t=c.previousElementSibling||c;ign=Date.now()+(smooth?900:300);if(smooth)l.scrollTo({top:t.offsetTop,behavior:'smooth'});else l.scrollTop=t.offsetTop}
 document.addEventListener('scroll',e=>{if(mode!=='dash'||!e.target||e.target.id!=='dlist'||Date.now()<ign)return;clearTimeout(dto);dto=setTimeout(()=>{if(mode==='dash')dscroll(true)},3000)},true);
@@ -387,6 +387,9 @@ function refreshMode(){if(mode==='dash')renderDash();else render()}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&data.awake){if(awkV)awkV.play().catch(()=>{});else awakeOn()}});
 document.addEventListener('click',()=>{if(data.awake&&!awk&&!awkV)awakeOn()},true);
 function dashTick(){const d=new Date(VN()),c=$('#dclk');if(c)c.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.getMinutes()!==lastMin&&mode==='dash')renderDash()}
+function renderSettings(){$('#app').innerHTML=`<div class="bar"><h1>設定</h1><button class="pri" data-act="back">完了</button></div>
+  <div class="field"><label>画面の消灯</label><button data-act="awake" class="${data.awake?'pri':''}">☀ 画面を消さない: ${data.awake?'オン':'オフ'}</button><div class="hint">オンにすると、アプリを開いている間、画面が自動で消えません。</div></div>
+  <div class="field"><label>GPS試験モード</label><button data-act="settest" class="${data.testMode?'pri':''}">🧪 GPS試験モード: ${data.testMode?'オン':'オフ'}</button><div class="hint">オンにすると、車載表示に「試験」ボタンが出ます。実際に走らずに、模擬走行で停留所の自動進行や遅延表示を確認できます。通常の運行では、オフにしてください。</div></div>`}
 function renderTypes(){
   $('#app').innerHTML=`<div class="bar"><h1>区分の編集</h1><button class="pri" data-act="back">完了</button></div>
   <div class="hint">便の「区分」プルダウンに出る項目です。名前を変えると設定済みの便も一緒に変わります。</div>
@@ -425,7 +428,7 @@ function fromText(t){const rows=[];t.split(/\r?\n/).forEach(l=>{if(!l.trim())ret
   else if(l[0]==='!'||l[0]==='！')rows.push({k:'note',text:l.slice(1).trim()});
   else{const a=l.split(/[,\t，]/).map(x=>x.trim());rows.push({k:'sta',name:a[0]||'',arr:a[1]||'',dep:a[2]||'',trk:a[3]||'',memo:a[4]||'',km:a[5]||'',lat:a[6]||'',lng:a[7]||'',addr:a[8]||''})}});return rows}
 function render(){clearInterval(timer);if(mode!=='dash'){gpsStop();closeSim()}
-  if(mode==='list')renderList();else if(mode==='types')renderTypes();
+  if(mode==='list')renderList();else if(mode==='types')renderTypes();else if(mode==='settings')renderSettings();
   else if(mode==='view'){renderView();timer=setInterval(tick,1000)}else if(mode==='dash'){renderDash();timer=setInterval(dashTick,1000)}else renderEdit();
   window.scrollTo(0,0)}
 const blank=()=>({id:uid(),name:'新しい運行表',note:'',rows:[{k:'trip',no:'',type:'',dest:''},{k:'sta',name:'',arr:'',dep:'',trk:'',memo:'',km:''}]});
@@ -469,6 +472,8 @@ document.addEventListener('click',e=>{
   else if(a==='tmode'){const v=b.dataset.v,f=fstSet(s);if(v==='dur')durFromTimes(s);s.rows.forEach((r,k)=>{if(r.k==='sta')r.tm=(v==='dur'&&!f.has(k))?'dur':'direct'});save();renderEdit()}
   else if(a==='rtm'){const r=s.rows[i];if(r.tm==='dur'){r.tm='direct'}else{r.tm='dur';durOne(s,i)}save();renderEdit()}
   else if(a==='awake'){if(data.awake){data.awake=false;awakeOff();save();toast('画面を消さない: オフ');refreshMode()}else{awakeOn().then(ok=>{if(ok){data.awake=true;save();toast('画面を消さない: オン')}else toast('この端末では使えません');refreshMode()})}}
+  else if(a==='settings'){mode='settings';render()}
+  else if(a==='settest'){data.testMode=!data.testMode;if(!data.testMode){gpsStop();closeSim()}save();renderSettings()}
   else if(a==='simp'){openSim()}
   else if(a==='simx'){closeSim()}
   else if(a==='simsp'){simSp=+b.dataset.v;simPanel()}
